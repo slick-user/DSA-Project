@@ -136,6 +136,7 @@
   </ItemGroup>
   <ItemGroup>
     <Font Include="assets\ARIAL.TTF" />
+    <Font Include="assets\monogram.ttf" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\enemy.png" />

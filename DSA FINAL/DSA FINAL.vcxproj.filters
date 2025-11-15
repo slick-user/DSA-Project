@@ -52,6 +52,9 @@
     <Font Include="assets\ARIAL.TTF">
       <Filter>Resource Files\Assets</Filter>
     </Font>
+    <Font Include="assets\monogram.ttf">
+      <Filter>Resource Files\Assets</Filter>
+    </Font>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="enemy.hpp">
