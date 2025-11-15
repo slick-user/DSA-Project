@@ -4,7 +4,7 @@
 
 Game::Game(RenderWindow* window) : window(window),
                x(0), y(0), dx(0), dy(0), timer(0), delay(0.07),
-               GameRunning(true), enemyCount(4) {
+               GameRunning(true), enemyCount(4), score(0) {
 
     window->setFramerateLimit(60);
 
@@ -25,6 +25,29 @@ Game::Game(RenderWindow* window) : window(window),
         enemies[i] = Enemy(rand() % (N * ts), rand() % (M * ts), grid);
 }
 
+int Game::getScore() const { return score; }
+
+void Game::calculateScore() {
+    int totalCells = 0;
+    int filledCells = 0;
+
+    // Count total playable cells (excluding borders)
+    for (int i = 1; i < grid->getRows() - 1; i++) {
+        for (int j = 1; j < grid->getCols() - 1; j++) {
+            totalCells++;
+            if (grid->getCell(i, j) == 1) {  // Filled cells
+                filledCells++;
+            }
+        }
+    }
+
+    // Calculate percentage and convert to score (0-10000 points)
+    if (totalCells > 0) {
+        float percentage = (float)filledCells / totalCells * 100.0f;
+        score = (int)(percentage * 100);  // Score from 0 to 10000
+    }
+}
+
 MenuOptions Game::run() {
     Clock clock;
 
@@ -35,11 +58,14 @@ MenuOptions Game::run() {
         processInput();
         if (GameRunning) update(dt);
         render();
+
     }
 
     sleep(seconds(1));
 
-    return MENU;
+    calculateScore();
+
+    return ENDMENU;
 }
 
 void Game::processInput() {

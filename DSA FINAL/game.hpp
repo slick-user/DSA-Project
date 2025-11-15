@@ -9,6 +9,8 @@ public:
     Game(RenderWindow* window=nullptr);
     MenuOptions run();
 
+    int getScore() const;
+
 private:
     void processInput();
     void update(float dt);
@@ -25,4 +27,7 @@ private:
     Grid* grid;
     Enemy enemies[10];
     int enemyCount;
+
+    int score;
+    void calculateScore();
 };

@@ -3,6 +3,7 @@
 const int MAX_MENU_ITEMS = 6;
 
 enum UI {
+	NONE,
 	MAIN,
 	BACK_MAIN,
 	START_UI,
@@ -14,6 +15,7 @@ enum UI {
 	HARD,
 	LEADERBOARD,
 	THEMES,
+	END,
 	QUIT
 };
 
@@ -35,7 +37,9 @@ class Menu {
 public:
 	Menu(RenderWindow* window = nullptr);
 
-	MenuOptions runMainMenu();
+	MenuOptions runMainMenu(bool m);
+
+	void setScore(int score);
 
 private:
 	RenderWindow* window;
@@ -54,11 +58,15 @@ private:
 	Color bgColor;
 	Color fontColor = { 255, 255, 255 };
 
+	int currentScore;
+
 	void setupMainMenu();
 	// UI's 
 	void setupStartMenu();
 	void setupLevelSelect();
 	void setupLeaderBoard();
+	
+	void setupEndMenu();
 
 	void switchTheme();
 

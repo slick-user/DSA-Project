@@ -14,16 +14,29 @@ int main()
     srand(time(0));
     Menu m(&window);
 
+
+    MenuOptions choice = MENU;
+
     while (window.isOpen()) {
-        
-        MenuOptions choice = m.runMainMenu();
 
         if (choice == MENU) {
-            m.runMainMenu();
+            choice = m.runMainMenu(true);
         }
         if (choice == PLAY) {
             Game g(&window);
-            g.run();
+
+            choice = g.run();
+            if (choice == ENDMENU) {
+                int gameScore = g.getScore();
+                m.setScore(gameScore);
+            }
+        }
+        if (choice == ENDMENU) {
+            choice = m.runMainMenu(false);
+
+            if (choice == PLAY) {
+                continue;
+            }
         }
 
         if (choice == EXIT) {
