@@ -5,7 +5,13 @@
 #include <time.h>
 #include <iostream>
 #include <string>
+#include <fstream>
+#include <cstring>
+#include <ctime>
+#include <cstdlib>
+#include <cctype>
 using namespace sf;
+using namespace std;
 
 #include "grid.hpp"
 

@@ -1,80 +1,117 @@
+#pragma once
+
 #include "utilities.hpp"
+#include "authManager.hpp"
 
 const int MAX_MENU_ITEMS = 6;
 
 enum UI {
-	NONE,
-	MAIN,
-	BACK_MAIN,
-	START_UI,
-	SINGLE_PLAYER,
-	MULTIPLAYER,
-	LEVEL_SELECT,
-	EASY,
-	MEDIUM,
-	HARD,
-	LEADERBOARD,
-	THEMES,
-	END,
-	QUIT
+    NONE,
+    MAIN,
+    BACK_MAIN,
+    START_UI,
+    SINGLE_PLAYER,
+    MULTIPLAYER,
+    LEVEL_SELECT,
+    EASY,
+    MEDIUM,
+    HARD,
+    LEADERBOARD,
+    THEMES,
+    END,
+    QUIT,
+    AUTH_SCREEN,
+    LOGIN_MENU,
+    REGISTER_MENU,
+    LOGIN,
+    REGISTER,
 };
-
-/*
-enum START_OPTIONS {
-	SINGLEPLAYER,
-	MULTIPLAYER,
-	BACK
-};
-*/
 
 struct MenuItem {
-	Text text;
-	UI action; // the enum value to return to when this item is selected
-	FloatRect bounds;
+    Text text;
+    UI action;
+    FloatRect bounds;
 };
 
 class Menu {
 public:
-	Menu(RenderWindow* window = nullptr);
-
-	MenuOptions runMainMenu(bool m);
-
-	void setScore(int score);
+    Menu(RenderWindow* window = nullptr);
+    MenuOptions runMainMenu(bool m);
+    MenuOptions runAuthScreen();
+    void setScore(int score);
+    bool isLoggedIn() const { return authManager.isLoggedIn(); }
 
 private:
-	RenderWindow* window;
-	Font font;
-	Text title;
-	
-	int fontSize = 45;
+    // Window and rendering
+    RenderWindow* window;
+    Font font;
+    Text title;
+    int fontSize = 45;
+    Color bgColor;
+    Color fontColor = { 255, 255, 255 };
+    int theme;
 
-	MenuItem menuItems[MAX_MENU_ITEMS];
-	int itemCount;
-	int selectedIndex;
+    // Menu items
+    MenuItem menuItems[MAX_MENU_ITEMS];
+    int itemCount;
+    int selectedIndex;
+    UI currentMenuType;
+    int currentScore;
 
-	UI currentMenuType;
+    // Authentication
+    authManager authManager;
+    Player currentPlayer;
+    string username;
+    string password;
+    string loginError;
+    string registerError;
 
-	int theme;
-	Color bgColor;
-	Color fontColor = { 255, 255, 255 };
+    // Input handling
+    char usernameInput[100];
+    char passwordInput[100];
+    char nicknameInput[100];
+    char emailInput[100];
+    int usernameLen, passwordLen, nicknameLen, emailLen;
+    int currentInputField;
+    bool isInputMode;
 
-	int currentScore;
+    // ===== Helper Functions =====
+    void clearMenuItems();
+    void setItem(int index, const string& label, float x, float y, UI action);
+    void finalizeBounds(int startIndex = 0);
+    void resetAuthInputs();
+    bool isMouseOver(const FloatRect& bounds, int mouseX, int mouseY) const;
 
-	void setupMainMenu();
-	// UI's 
-	void setupStartMenu();
-	void setupLevelSelect();
-	void setupLeaderBoard();
-	
-	void setupEndMenu();
+    // ===== Menu Setup =====
+    void setupAuthScreen();
+    void setupLoginMenu();
+    void setupRegisterMenu();
+    void setupMainMenu();
+    void setupStartMenu();
+    void setupLevelSelect();
+    void setupLeaderBoard();
+    void setupEndMenu();
+    void switchTheme();
 
-	void switchTheme();
+    // ===== Input Handling =====
+    void handleTextInput(sf::Event& e);
+    void handleBackspace();
+    void handleCharInput(char c);
+    void handleTabKey();
+    UI handleEnterKey();
+    UI attemptRegister();
+    void handleKeyboard(sf::Event& e, UI& final_action);
+    void handleMouse(sf::Event& e, UI& final_action);
 
-	void handleInput(const Event& e);
-	void updateSelection(const Event& e);
-	void draw();
+    // ===== Action Processing =====
+    MenuOptions processAction(UI action);
 
-	// Utility for mouse-over check
-	bool isMouseOver(const FloatRect& bounds, int mouseX, int mouseY) const;
-
+    // ===== Rendering =====
+    void updateColors();
+    void render();
+    void renderLoginScreen();
+    void renderRegisterScreen();
+    void renderAuthScreen();
+    void renderNormalMenu();
 };
+

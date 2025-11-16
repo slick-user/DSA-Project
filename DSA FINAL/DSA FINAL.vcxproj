@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="authManager.cpp" />
     <ClCompile Include="enemy.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="grid.cpp" />
@@ -144,6 +145,7 @@
     <Image Include="assets\tiles.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="authManager.hpp" />
     <ClInclude Include="enemy.hpp" />
     <ClInclude Include="game.hpp" />
     <ClInclude Include="grid.hpp" />
