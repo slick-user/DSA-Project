@@ -3,6 +3,8 @@
 #pragma once
 #include "enemy.hpp"
 #include "utilities.hpp"
+//#include "authManager.hpp"
+#include "gameManager.hpp"
 
 class Game {
 public:
@@ -20,6 +22,9 @@ private:
     Texture tTile, tGameover, tEnemy;
     Sprite sTile, sGameover, sEnemy;
 
+    Font font;
+    Text scoreText, powerUpText, bonusText, freezeTimerText;
+
     int x, y, dx, dy;
     float timer, delay;
     bool GameRunning;
@@ -29,5 +34,21 @@ private:
     int enemyCount;
 
     int score;
-    void calculateScore();
+    int lastPointsEarned;
+    int bonusCounter;
+    int tilesCapturedThisMove;
+    int countCapturedTiles();
+    int addScore(int tilesCaptured);
+
+    int powerUpCount;
+    int getPowerUpCount() const;
+    void checkPowerUpAward();
+
+    bool freezePowerUpActive;
+    float freezePowerUpTimer;
+    void activateFreezePowerUp();
+    void updateFreezePowerUp(float dt);
+
+    void drawUI();
+    float displayTimer;
 };

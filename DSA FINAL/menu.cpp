@@ -1,3 +1,5 @@
+// Azlan Ali Khan 24I-2110 DSA FINAL PROJECT
+
 #include "menu.hpp"
 
 // ===================== Constructor =====================
@@ -5,6 +7,7 @@
 Menu::Menu(RenderWindow* window) : window(window), currentScore(0),
 usernameLen(0), passwordLen(0), nicknameLen(0), emailLen(0),
 currentInputField(0), isInputMode(false), theme(0) {
+    gameManager = GameManager::getInstance();
     bgColor = Color(0, 0, 0);
     fontColor = Color(255, 255, 255);
     memset(usernameInput, 0, 100);
@@ -13,7 +16,7 @@ currentInputField(0), isInputMode(false), theme(0) {
     memset(emailInput, 0, 100);
 }
 
-// ===================== Helper Functions =====================
+// Helper Functions
 
 void Menu::clearMenuItems() {
     for (int i = 0; i < MAX_MENU_ITEMS; ++i) {
@@ -102,15 +105,41 @@ void Menu::setupRegisterMenu() {
 
 void Menu::setupMainMenu() {
     currentMenuType = MAIN;
-    itemCount = 5;
+    itemCount = 6;
     selectedIndex = 0;
     clearMenuItems();
 
-    setItem(0, "Play", 150, 80, START_UI);
-    setItem(1, "Select Level", 150, 150, LEVEL_SELECT);
-    setItem(2, "LeaderBoard", 150, 220, LEADERBOARD);
-    setItem(3, "Themes", 150, 290, THEMES);
-    setItem(4, "Exit", 150, 360, QUIT);
+    setItem(0, "Play", 150, 10, START_UI);
+    setItem(1, "Select Level", 150, 80, LEVEL_SELECT);
+    setItem(2, "Player Profile", 150, 150, PROFILE);
+    setItem(3, "LeaderBoard", 150, 220, LEADERBOARD);
+    setItem(4, "Themes", 150, 290, THEMES);
+    setItem(5, "Exit", 150, 360, QUIT);
+
+    finalizeBounds(0);
+}
+
+void Menu::setupProfileMenu() {
+    currentMenuType = PROFILE;
+    itemCount = 4;
+    selectedIndex = 0;
+    clearMenuItems();
+
+    setItem(0, "View Profile", 150, 100, PROFILE_VIEW);
+    setItem(1, "Friends List", 150, 160, NONE);  // To be implemented
+    setItem(2, "Match History", 150, 220, NONE); // To be implemented
+    setItem(3, "Back", 150, 280, BACK_MAIN);
+
+    finalizeBounds(0);
+}
+
+void Menu::setupProfileView() {
+    currentMenuType = PROFILE_VIEW;
+    itemCount = 1;
+    selectedIndex = 0;
+    clearMenuItems();
+
+    setItem(0, "Back", 150, 360, PROFILE);
 
     finalizeBounds(0);
 }
@@ -275,13 +304,13 @@ UI Menu::attemptRegister() {
     }
     else if (passwordLen < 6) registerError = "Password must be 6 characters or greater";
 
-    else if (authManager.isUsernameTaken(username)) {
+    else if (gameManager->isUsernameTaken(username)) {
         registerError = "Username already taken!";
     }
     else {
-        if (authManager.registerUser(username, password, nickname, email)) {
-            authManager.login(username, password);
-            currentPlayer = authManager.getCurrentPlayer();
+        if (gameManager->registerUser(username, password, nickname, email)) {
+            gameManager->login(username, password);
+            currentPlayer = gameManager->getCurrentPlayer();
             return MAIN;
         }
         else {
@@ -362,6 +391,12 @@ MenuOptions Menu::processAction(UI action) {
     case LEADERBOARD:
         setupLeaderBoard();
         break;
+    case PROFILE:
+        setupProfileMenu();
+        break;
+    case PROFILE_VIEW:
+        setupProfileView();
+        break;
     case QUIT:
         return EXIT;
     case START_UI:
@@ -374,8 +409,8 @@ MenuOptions Menu::processAction(UI action) {
         setupLoginMenu();
         break;
     case LOGIN:
-        if (authManager.login(username, password)) {
-            currentPlayer = authManager.getCurrentPlayer();
+        if (gameManager->login(username, password)) {
+            currentPlayer = gameManager->getCurrentPlayer();
             isInputMode = false;
             cout << "works!";
             setupMainMenu();
@@ -486,7 +521,7 @@ void Menu::renderRegisterScreen() {
 }
 
 void Menu::renderAuthScreen() {
-    Text title("Welcome to Game", font, fontSize);
+    Text title("DSA Project By Azlan and ____", font, fontSize);
     title.setPosition(150, 50);
     title.setFillColor(fontColor);
     window->draw(title);
@@ -497,6 +532,75 @@ void Menu::renderAuthScreen() {
 }
 
 void Menu::renderNormalMenu() {
+    for (int i = 0; i < itemCount; ++i) {
+        window->draw(menuItems[i].text);
+    }
+}
+
+void Menu::renderProfileMenu() {
+    Text title("Player Profile", font, fontSize);
+    title.setPosition(150, 30);
+    title.setFillColor(fontColor);
+    window->draw(title);
+
+    // Draw menu items
+    for (int i = 0; i < itemCount; ++i) {
+        window->draw(menuItems[i].text);
+    }
+}
+
+void Menu::renderProfileView() {
+    Text title("Player Profile - " + string(currentPlayer.nickname), font, fontSize);
+    title.setPosition(100, 30);
+    title.setFillColor(fontColor);
+    window->draw(title);
+
+    // Player information
+    Text userInfo("Username: " + string(currentPlayer.username), font, 25);
+    userInfo.setPosition(100, 80);
+    userInfo.setFillColor(fontColor);
+    window->draw(userInfo);
+
+    Text nickInfo("Nickname: " + string(currentPlayer.nickname), font, 25);
+    nickInfo.setPosition(100, 110);
+    nickInfo.setFillColor(fontColor);
+    window->draw(nickInfo);
+
+    if (currentPlayer.email[0] != '\0') {
+        Text emailInfo("Email: " + string(currentPlayer.email), font, 25);
+        emailInfo.setPosition(100, 140);
+        emailInfo.setFillColor(fontColor);
+        window->draw(emailInfo);
+    }
+
+    Text regInfo("Registered: " + string(currentPlayer.registrationDate), font, 25);
+    regInfo.setPosition(100, 170);
+    regInfo.setFillColor(fontColor);
+    window->draw(regInfo);
+
+    Text playerIDInfo("Player ID: " + to_string(currentPlayer.playerID), font, 25);
+    playerIDInfo.setPosition(100, 200);
+    playerIDInfo.setFillColor(fontColor);
+    window->draw(playerIDInfo);
+
+    // Game statistics (to be populated from game data)
+    Text statsTitle("Game Statistics", font, 28);
+    statsTitle.setPosition(100, 240);
+    statsTitle.setFillColor(Color::Cyan);
+    window->draw(statsTitle);
+
+    // These would come from your game data storage
+    Text totalGames("Total Games: " + to_string(currentPlayer.totalGames), font, 22);
+    totalGames.setPosition(120, 280);
+    totalGames.setFillColor(fontColor);
+    window->draw(totalGames);
+
+    Text totalPoints("Total Points: " + to_string(currentPlayer.totalPoints), font, 22);
+    totalPoints.setPosition(120, 310);
+    totalPoints.setFillColor(fontColor);
+    window->draw(totalPoints);
+
+    // Draw back buttons
     for (int i = 0; i < itemCount; ++i) {
         window->draw(menuItems[i].text);
     }
@@ -514,6 +618,12 @@ void Menu::render() {
     else if (currentMenuType == AUTH_SCREEN) {
         renderAuthScreen();
     }
+    else if (currentMenuType == PROFILE) {
+        renderProfileMenu();
+    }
+    else if (currentMenuType == PROFILE_VIEW) {
+        renderProfileView();
+    }
     else {
         renderNormalMenu();
     }
@@ -521,14 +631,14 @@ void Menu::render() {
     window->display();
 }
 
-// ===================== Main Menu Loop =====================
+// Menu Loop
 
 MenuOptions Menu::runMainMenu(bool m) {
     if (!font.loadFromFile("assets/monogram.ttf")) {
         return EXIT;
     }
 
-    if (!authManager.isLoggedIn() && m) {
+    if (!gameManager->isLoggedIn() && m) {
         setupLoginMenu();
     }
     else if (m) {

@@ -130,6 +130,7 @@
     <ClCompile Include="authManager.cpp" />
     <ClCompile Include="enemy.cpp" />
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="gameManager.cpp" />
     <ClCompile Include="grid.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="menu.cpp" />
@@ -148,6 +149,7 @@
     <ClInclude Include="authManager.hpp" />
     <ClInclude Include="enemy.hpp" />
     <ClInclude Include="game.hpp" />
+    <ClInclude Include="gameManager.hpp" />
     <ClInclude Include="grid.hpp" />
     <ClInclude Include="menu.hpp" />
     <ClInclude Include="utilities.hpp" />

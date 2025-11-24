@@ -39,6 +39,9 @@
     <ClCompile Include="authManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gameManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\enemy.png">
@@ -76,6 +79,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="authManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gameManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

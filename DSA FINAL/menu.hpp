@@ -1,6 +1,9 @@
+// Azlan Ali Khan 24I-2110 DSA FINAL PROJECT
+
 #pragma once
 
 #include "utilities.hpp"
+#include "gameManager.hpp"
 #include "authManager.hpp"
 
 const int MAX_MENU_ITEMS = 6;
@@ -18,6 +21,8 @@ enum UI {
     HARD,
     LEADERBOARD,
     THEMES,
+    PROFILE,
+    PROFILE_VIEW,
     END,
     QUIT,
     AUTH_SCREEN,
@@ -39,7 +44,7 @@ public:
     MenuOptions runMainMenu(bool m);
     MenuOptions runAuthScreen();
     void setScore(int score);
-    bool isLoggedIn() const { return authManager.isLoggedIn(); }
+    bool isLoggedIn() const { return gameManager->isLoggedIn(); }
 
 private:
     // Window and rendering
@@ -59,7 +64,8 @@ private:
     int currentScore;
 
     // Authentication
-    authManager authManager;
+    GameManager* gameManager;
+    //authManager authManager;
     Player currentPlayer;
     string username;
     string password;
@@ -88,6 +94,8 @@ private:
     void setupRegisterMenu();
     void setupMainMenu();
     void setupStartMenu();
+    void setupProfileMenu();
+    void setupProfileView();
     void setupLevelSelect();
     void setupLeaderBoard();
     void setupEndMenu();
@@ -113,5 +121,7 @@ private:
     void renderRegisterScreen();
     void renderAuthScreen();
     void renderNormalMenu();
+    void renderProfileMenu();
+    void renderProfileView();
 };
 

@@ -16,7 +16,13 @@ struct Player {
     char registrationDate[50];
     int playerID;
     
-    Player() {
+    int totalGames;
+    int totalPoints;
+    int wins;
+    int losses;
+    // We'll add friends list and match history later
+
+    Player() : playerID(0), totalGames(0), totalPoints(0), wins(0), losses(0) {
         memset(username, 0, MAX_USERNAME_LEN);
         memset(password, 0, MAX_PASSWORD_LEN);
         memset(nickname, 0, MAX_NICKNAME_LEN);
@@ -69,5 +75,7 @@ public:
     // File operations
     bool loadUsers();
     bool saveUsers();
+
+    void updatePlayerStats(int score);
 };
 

@@ -1,3 +1,5 @@
+// Azlan Ali Khan 24I-2110 DSA FINAL PROJECT
+
 #include "authManager.hpp"
 
 authManager::authManager() : userCount(0), loggedIn(false), 
@@ -209,79 +211,142 @@ bool authManager::loadUsers() {
     if (!file.is_open()) {
         return false;
     }
-    
+
     userCount = 0;
-    char line[500];
-    
-    while (file.getline(line, 500) && userCount < MAX_USERS) {
-        if (line[0] == '\0') continue;
-        
-        Player player;
-        int field = 0;
-        int lineIdx = 0;
-        char currentField[200];
-        int fieldIdx = 0;
-        
-        // Parse: playerID|username|password|nickname|email|registrationDate
-        while (line[lineIdx] != '\0' && field < 6) {
-            if (line[lineIdx] == '|' || line[lineIdx] == '\n') {
-                currentField[fieldIdx] = '\0';
-                
-                switch (field) {
-                case 0:
-                    player.playerID = atoi(currentField);
-                    if (player.playerID >= nextPlayerID) {
-                        nextPlayerID = player.playerID + 1;
-                    }
-                    break;
-                case 1:
-                    copyString(player.username, currentField, MAX_USERNAME_LEN);
-                    break;
-                case 2:
-                    copyString(player.password, currentField, MAX_PASSWORD_LEN);
-                    break;
-                case 3:
-                    copyString(player.nickname, currentField, MAX_NICKNAME_LEN);
-                    break;
-                case 4:
-                    copyString(player.email, currentField, MAX_EMAIL_LEN);
-                    break;
-                case 5:
-                    copyString(player.registrationDate, currentField, 50);
-                    break;
-                }
-                
-                field++;
-                fieldIdx = 0;
-            } else {
-                currentField[fieldIdx++] = line[lineIdx];
-            }
-            lineIdx++;
+    std::string line;
+    while (std::getline(file, line) && userCount < MAX_USERS) {
+        if (line.empty()) continue;
+
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
         }
-        
-        users[userCount] = player;
-        userCount++;
+
+        std::istringstream ss(line);
+        std::string field;
+        Player player;
+
+        // Updated fields with game statistics
+        // playerID|username|password|nickname|email|registrationDate|totalGames|totalPoints|wins|losses
+
+        // Field 0: playerID
+        if (!getline(ss, field, '|')) continue;
+        player.playerID = std::atoi(field.c_str());
+        if (player.playerID >= nextPlayerID) {
+            nextPlayerID = player.playerID + 1;
+        }
+
+        // Field 1: username
+        if (!getline(ss, field, '|')) continue;
+        copyString(player.username, field.c_str(), MAX_USERNAME_LEN);
+
+        // Field 2: password
+        if (!getline(ss, field, '|')) continue;
+        copyString(player.password, field.c_str(), MAX_PASSWORD_LEN);
+
+        // Field 3: nickname
+        if (!getline(ss, field, '|')) {
+            copyString(player.nickname, player.username, MAX_NICKNAME_LEN);
+        }
+        else {
+            copyString(player.nickname, field.c_str(), MAX_NICKNAME_LEN);
+        }
+
+        // Field 4: email
+        if (!getline(ss, field, '|')) {
+            player.email[0] = '\0';
+        }
+        else {
+            copyString(player.email, field.c_str(), MAX_EMAIL_LEN);
+        }
+
+        // Field 5: registrationDate
+        if (!getline(ss, field, '|')) {
+            player.registrationDate[0] = '\0';
+        }
+        else {
+            copyString(player.registrationDate, field.c_str(), 50);
+        }
+
+        // Field 6: totalGames
+        if (!getline(ss, field, '|')) {
+            player.totalGames = 0;
+        }
+        else {
+            player.totalGames = std::atoi(field.c_str());
+        }
+
+        // Field 7: totalPoints
+        if (!getline(ss, field, '|')) {
+            player.totalPoints = 0;
+        }
+        else {
+            player.totalPoints = std::atoi(field.c_str());
+        }
+
+        /*
+        // Field 8: wins 
+        if (!getline(ss, field, '|')) {
+            player.wins = 0;
+        }
+        else {
+            player.wins = std::atoi(field.c_str());
+        }
+
+        // Field 9: losses - read rest of line
+        if (!getline(ss, field)) {
+            player.losses = 0;
+        }
+        else {
+            player.losses = std::atoi(field.c_str());
+        }
+
+        */
+
+        users[userCount++] = player;
     }
-    
+
     file.close();
     return true;
 }
 
 bool authManager::saveUsers() {
-    std::ofstream file(usersFile);
+    ofstream file(usersFile);
     if (!file.is_open()) {
         return false;
     }
-    
+
     for (int i = 0; i < userCount; i++) {
         file << users[i].playerID << "|"
-             << users[i].username << "|"
-             << users[i].password << "|"
-             << users[i].nickname << "|"
-             << users[i].email << "|"
-             << users[i].registrationDate << "\n";
+            << users[i].username << "|"
+            << users[i].password << "|"
+            << users[i].nickname << "|"
+            << users[i].email << "|"
+            << users[i].registrationDate << "|"
+            << users[i].totalGames << "|"
+            << users[i].totalPoints << "|"
+            //<< users[i].wins << "|"            
+            //<< users[i].losses << "\n";  
+            << "\n";
     }
-    
+
     file.close();
     return true;
+}
+
+void authManager::updatePlayerStats(int score) {
+    if (!loggedIn) return;
+
+    // Update current player
+    currentPlayer.totalGames++;
+    currentPlayer.totalPoints += score;
+
+    // Update in users array
+    for (int i = 0; i < userCount; i++) {
+        if (users[i].playerID == currentPlayer.playerID) {
+            users[i] = currentPlayer;
+            break;
+        }
+    }
+
+    saveUsers();
 }
