@@ -1,6 +1,6 @@
 #include "menu.hpp"
 
-// ===================== Constructor =====================
+// Constructor 
 
 Menu::Menu(RenderWindow* window) : window(window), currentScore(0),
             usernameLen(0), passwordLen(0), nicknameLen(0), emailLen(0),
@@ -8,7 +8,9 @@ Menu::Menu(RenderWindow* window) : window(window), currentScore(0),
             selectedMode(SINGLE_PLAYER_MODE), player1Score(0), player2Score(0),
             player2Name("Player2"), player2ID(0), player2InputLen(0), waitingForPlayer2(false),
             lastGameWasMultiplayer(false), showingFriends(true), showingRequests(false), 
-            showingSentRequests(false) {
+            showingSentRequests(false), showInventory(false) {
+
+    themeInventory = new Inventory(100, 50, 300, 300);
 
     // Initialize Themes in AVL Tree
     // 1. Basic
@@ -89,9 +91,14 @@ Menu::Menu(RenderWindow* window) : window(window), currentScore(0),
 
     currentThemeIndex = 0;
 
-    // Set initial colors
+    themeInventory->initialize(themeTree);
+
+    // Set initial colors from default theme
     Theme current = getCurrentTheme();
     bgColor = current.bgColor;
+    title.setFillColor(current.titleColor);
+    fontColor = Color(255, 255, 255);
+
     //fontColor = current.textColor;
     title.setFillColor(current.titleColor);
     fontColor = Color(255, 255, 255);
@@ -104,7 +111,7 @@ Menu::Menu(RenderWindow* window) : window(window), currentScore(0),
     gameManager = GameManager::getInstance();
 }
 
-// ===================== Helper Functions =====================
+//  Helper Functions 
 
 void Menu::clearMenuItems() {
     for (int i = 0; i < MAX_MENU_ITEMS; ++i) {
@@ -156,7 +163,7 @@ void Menu::setMultiplayerScores(int p1Score, int p2Score) {
     lastGameWasMultiplayer = true;
 }
 
-// ===================== Menu Setup Functions =====================
+//               Menu Setup Functions 
 
 void Menu::setupAuthScreen() {
     currentMenuType = AUTH_SCREEN;
@@ -279,6 +286,11 @@ void Menu::setupLeaderBoard() {
     finalizeBounds(0);
 }
 
+void Menu::setupInventoryMenu() {
+    showInventory = true;
+    themeInventory->toggle();
+}
+
 void Menu::setupEndMenu() {
     currentMenuType = END;
     
@@ -319,12 +331,12 @@ void Menu::setupEndMenu() {
         if (isHighScore) {
             setItem(2, "NEW HIGH SCORE!", 130, 160, NONE);
             setItem(3, "Restart", 150, 200, SINGLE_PLAYER);
-            setItem(4, "Main Menu", 150, 260, BACK_MAIN);
-            setItem(5, "Exit Game", 150, 320, QUIT);
+            setItem(4, "Main Menu", 150, 250, BACK_MAIN);
+            setItem(5, "Exit Game", 150, 280, QUIT);
         } else {
             setItem(2, "Restart", 150, 180, SINGLE_PLAYER);
             setItem(3, "Main Menu", 150, 240, BACK_MAIN);
-            setItem(4, "Exit Game", 150, 300, QUIT);
+            setItem(4, "Exit Game", 150, 280, QUIT);
         }
 
         finalizeBounds(isHighScore ? 3 : 2);
@@ -499,7 +511,7 @@ void Menu::updateMatchmaking() {
     }
 }
 
-// ===================== Input Handling =====================
+//                    Input Handling 
 
 void Menu::handleTextInput(sf::Event& e) {
     if (currentMenuType == FRIENDS_MENU) {
@@ -640,6 +652,22 @@ UI Menu::attemptRegister() {
 
 void Menu::handleKeyboard(sf::Event& e, UI& final_action) {
     if (e.type != Event::KeyPressed) return;
+
+    // Handle inventory input first
+    if (showInventory) {
+        themeInventory->handleInput(e);
+        if (!themeInventory->isInventoryActive()) {
+            showInventory = false;
+            // Apply the selected theme
+            Theme selectedTheme = themeInventory->getSelectedTheme();
+            if (selectedTheme.id != -1) {
+                bgColor = selectedTheme.bgColor;
+                fontColor = selectedTheme.textColor;
+                title.setFillColor(selectedTheme.titleColor);
+            }
+        }
+        return;
+    }
 
     // Handle input mode keys
     if (currentMenuType == FRIENDS_MENU) {
@@ -827,7 +855,8 @@ MenuOptions Menu::processAction(UI action) {
     case QUIT:
         return EXIT;
     case THEMES:
-        switchTheme();
+        setupInventoryMenu();
+        //switchTheme();
         break;
     case FRIENDS_MENU:
         setupFriendsMenu();
@@ -1415,6 +1444,13 @@ void Menu::renderMatchmakingMenu() {
 void Menu::render() {
     window->clear(bgColor);
 
+        // Render inventory if active
+    if (showInventory) {
+        themeInventory->render(window);
+        window->display();
+        return;
+    }
+
     if (currentMenuType == LOGIN_MENU) {
         renderLoginScreen();
     }
@@ -1449,7 +1485,7 @@ void Menu::render() {
     window->display();
 }
 
-// ===================== Main Menu Loop =====================
+//          Main Menu Loop 
 
 MenuOptions Menu::runMainMenu(bool m) {
     if (!font.loadFromFile("assets/monogram.ttf")) {

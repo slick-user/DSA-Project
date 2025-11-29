@@ -134,6 +134,7 @@
     <ClCompile Include="game.cpp" />
     <ClCompile Include="gameManager.cpp" />
     <ClCompile Include="grid.cpp" />
+    <ClCompile Include="inventory.cpp" />
     <ClCompile Include="leaderboard.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="matchmaking.cpp" />
@@ -159,6 +160,7 @@
     <ClInclude Include="game.hpp" />
     <ClInclude Include="gameManager.hpp" />
     <ClInclude Include="grid.hpp" />
+    <ClInclude Include="inventory.hpp" />
     <ClInclude Include="leaderboard.hpp" />
     <ClInclude Include="matchmaking.hpp" />
     <ClInclude Include="menu.hpp" />

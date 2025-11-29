@@ -7,6 +7,7 @@
 #include "avl_tree.hpp"
 #include "friendManager.hpp"
 #include "matchmaking.hpp"
+#include "inventory.hpp"
 
 const int MAX_MENU_ITEMS = 10;
 
@@ -98,6 +99,9 @@ private:
     int player1Score;
     int player2Score;
 
+    Inventory* themeInventory;
+    bool showInventory; 
+
     // Authentication
     GameManager* gameManager;
     //AuthManager AuthManager;
@@ -169,6 +173,7 @@ private:
     void setupProfileView();
     void setupFriendsMenu();
     void setupMatchmakingMenu();
+    void setupInventoryMenu();
     void setupEndMenu();
     void setupMultiplayerSetup();
     void switchTheme();
