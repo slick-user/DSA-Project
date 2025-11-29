@@ -128,12 +128,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="authManager.cpp" />
+    <ClCompile Include="check.cpp" />
     <ClCompile Include="enemy.cpp" />
+    <ClCompile Include="friendManager.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="gameManager.cpp" />
     <ClCompile Include="grid.cpp" />
+    <ClCompile Include="leaderboard.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="matchmaking.cpp" />
     <ClCompile Include="menu.cpp" />
+    <ClCompile Include="player.cpp" />
+    <ClCompile Include="saveManager.cpp" />
     <ClCompile Include="utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -147,11 +153,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="authManager.hpp" />
+    <ClInclude Include="avl_tree.hpp" />
     <ClInclude Include="enemy.hpp" />
+    <ClInclude Include="friendManager.hpp" />
     <ClInclude Include="game.hpp" />
     <ClInclude Include="gameManager.hpp" />
     <ClInclude Include="grid.hpp" />
+    <ClInclude Include="leaderboard.hpp" />
+    <ClInclude Include="matchmaking.hpp" />
     <ClInclude Include="menu.hpp" />
+    <ClInclude Include="player.hpp" />
+    <ClInclude Include="saveManager.hpp" />
+    <ClInclude Include="theme.hpp" />
     <ClInclude Include="utilities.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

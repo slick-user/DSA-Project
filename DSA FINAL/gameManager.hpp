@@ -5,7 +5,7 @@
 class GameManager {
 private:
     static GameManager* instance;
-    authManager auth;
+    AuthManager auth;
 
     GameManager() = default; // Private constructor
 
@@ -31,12 +31,16 @@ public:
         return auth.registerUser(user, pass, nick, email);
     }
 
-    void updatePlayerStats(int score) {
-        auth.updatePlayerStats(score);
+    void updatePlayerStats() {
+        auth.updatePlayerStats();
     }
 
     Player getCurrentPlayer() {
         return auth.getCurrentPlayer();
+    }
+
+    Player* getCurrentsPlayer() {
+        return auth.getCurrentsPlayer();
     }
 
     bool isLoggedIn() {

@@ -1,23 +1,21 @@
-// Azlan Ali Khan 24I-2110 DSA FINAL PROJECT
-
 #include "authManager.hpp"
 
-authManager::authManager() : userCount(0), loggedIn(false), 
-    usersFile("users.txt"), nextPlayerID(1) {
+AuthManager::AuthManager() : userCount(0), loggedIn(false), nextPlayerID(1) {
+    usersFile = "users.txt";
     loadUsers();
 }
 
-authManager::~authManager() {
+AuthManager::~AuthManager() {
     saveUsers();
 }
 
-int authManager::stringLength(const char* str) {
+int AuthManager::stringLength(const char* str) {
     int len = 0;
     while (str[len] != '\0') len++;
     return len;
 }
 
-bool authManager::compareStrings(const char* str1, const char* str2) {
+bool AuthManager::compareStrings(const char* str1, const char* str2) {
     int i = 0;
     while (str1[i] != '\0' && str2[i] != '\0') {
         if (str1[i] != str2[i]) return false;
@@ -26,7 +24,7 @@ bool authManager::compareStrings(const char* str1, const char* str2) {
     return str1[i] == '\0' && str2[i] == '\0';
 }
 
-void authManager::copyString(char* dest, const char* src, int maxLen) {
+void AuthManager::copyString(char* dest, const char* src, int maxLen) {
     int i = 0;
     while (src[i] != '\0' && i < maxLen - 1) {
         dest[i] = src[i];
@@ -35,7 +33,7 @@ void authManager::copyString(char* dest, const char* src, int maxLen) {
     dest[i] = '\0';
 }
 
-int authManager::findUserByUsername(const char* username) {
+int AuthManager::findUserByUsername(const char* username) {
     for (int i = 0; i < userCount; i++) {
         if (compareStrings(users[i].username, username)) {
             return i;
@@ -44,7 +42,7 @@ int authManager::findUserByUsername(const char* username) {
     return -1;
 }
 
-bool authManager::isValidUsername(const char* username) {
+bool AuthManager::isValidUsername(const char* username) {
     int len = stringLength(username);
     if (len < 3 || len > 20) {
         return false;
@@ -59,7 +57,7 @@ bool authManager::isValidUsername(const char* username) {
     return true;
 }
 
-bool authManager::isValidPassword(const char* password) {
+bool AuthManager::isValidPassword(const char* password) {
     int len = stringLength(password);
     if (len < 6) {
         return false;
@@ -76,7 +74,7 @@ bool authManager::isValidPassword(const char* password) {
     return hasLetter && hasNumber;
 }
 
-void authManager::hashPassword(const char* password, char* hashedPassword, int maxLen) {
+void AuthManager::hashPassword(const char* password, char* hashedPassword, int maxLen) {
     unsigned int hash = 0;
     int len = stringLength(password);
     
@@ -107,22 +105,22 @@ void authManager::hashPassword(const char* password, char* hashedPassword, int m
     copyString(hashedPassword, temp, maxLen);
 }
 
-void authManager::getCurrentDate(char* dateStr, int maxLen) {
+void AuthManager::getCurrentDate(char* dateStr, int maxLen) {
     time_t now = time(0);
     struct tm timeinfo;
     localtime_s(&timeinfo, &now);
     strftime(dateStr, maxLen, "%Y-%m-%d %H:%M:%S", &timeinfo);
 }
 
-int authManager::generatePlayerID() {
+int AuthManager::generatePlayerID() {
     return nextPlayerID++;
 }
 
-bool authManager::isUsernameTaken(const string& username) {
+bool AuthManager::isUsernameTaken(const string& username) {
     return findUserByUsername(username.c_str()) != -1;
 }
 
-bool authManager::registerUser(const string& user, const string& password,
+bool AuthManager::registerUser(const string& user, const string& password,
                                const string& nickname, const string& email) {
     const char* username = user.c_str();
     const char* pass = password.c_str();
@@ -175,7 +173,7 @@ bool authManager::registerUser(const string& user, const string& password,
     return saveUsers();
 }
 
-bool authManager::login(const string& user, const string& password) {
+bool AuthManager::login(const string& user, const string& password) {
     int userIndex = findUserByUsername(user.c_str());
     if (userIndex == -1) {
         return false;
@@ -193,123 +191,76 @@ bool authManager::login(const string& user, const string& password) {
     return false;
 }
 
-Player authManager::getPlayer(const string& username) {
-    int index = findUserByUsername(username.c_str());
-    if (index != -1) {
-        return users[index];
-    }
-    return Player();
-}
 
-void authManager::logout() {
+void AuthManager::logout() {
     loggedIn = false;
     currentPlayer = Player();
 }
 
-bool authManager::loadUsers() {
+bool AuthManager::loadUsers() {
     std::ifstream file(usersFile);
     if (!file.is_open()) {
         return false;
     }
-
+    
     userCount = 0;
-    std::string line;
-    while (std::getline(file, line) && userCount < MAX_USERS) {
-        if (line.empty()) continue;
-
-        if (!line.empty() && line.back() == '\r') {
-            line.pop_back();
-        }
-
-        std::istringstream ss(line);
-        std::string field;
+    char line[500];
+    
+    while (file.getline(line, 500) && userCount < MAX_USERS) {
+        if (line[0] == '\0') continue;
+        
         Player player;
-
-        // Updated fields with game statistics
-        // playerID|username|password|nickname|email|registrationDate|totalGames|totalPoints|wins|losses
-
-        // Field 0: playerID
-        if (!getline(ss, field, '|')) continue;
-        player.playerID = std::atoi(field.c_str());
-        if (player.playerID >= nextPlayerID) {
-            nextPlayerID = player.playerID + 1;
+        int field = 0;
+        int lineIdx = 0;
+        char currentField[200];
+        int fieldIdx = 0;
+        
+        // Parse: playerID|username|password|nickname|email|registrationDate
+        while (line[lineIdx] != '\0' && field < 6) {
+            if (line[lineIdx] == '|' || line[lineIdx] == '\n') {
+                currentField[fieldIdx] = '\0';
+                
+                switch (field) {
+                case 0:
+                    player.playerID = atoi(currentField);
+                    if (player.playerID >= nextPlayerID) {
+                        nextPlayerID = player.playerID + 1;
+                    }
+                    break;
+                case 1:
+                    copyString(player.username, currentField, MAX_USERNAME_LEN);
+                    break;
+                case 2:
+                    copyString(player.password, currentField, MAX_PASSWORD_LEN);
+                    break;
+                case 3:
+                    copyString(player.nickname, currentField, MAX_NICKNAME_LEN);
+                    break;
+                case 4:
+                    copyString(player.email, currentField, MAX_EMAIL_LEN);
+                    break;
+                case 5:
+                    copyString(player.registrationDate, currentField, 50);
+                    break;
+                }
+                
+                field++;
+                fieldIdx = 0;
+            } else {
+                currentField[fieldIdx++] = line[lineIdx];
+            }
+            lineIdx++;
         }
-
-        // Field 1: username
-        if (!getline(ss, field, '|')) continue;
-        copyString(player.username, field.c_str(), MAX_USERNAME_LEN);
-
-        // Field 2: password
-        if (!getline(ss, field, '|')) continue;
-        copyString(player.password, field.c_str(), MAX_PASSWORD_LEN);
-
-        // Field 3: nickname
-        if (!getline(ss, field, '|')) {
-            copyString(player.nickname, player.username, MAX_NICKNAME_LEN);
-        }
-        else {
-            copyString(player.nickname, field.c_str(), MAX_NICKNAME_LEN);
-        }
-
-        // Field 4: email
-        if (!getline(ss, field, '|')) {
-            player.email[0] = '\0';
-        }
-        else {
-            copyString(player.email, field.c_str(), MAX_EMAIL_LEN);
-        }
-
-        // Field 5: registrationDate
-        if (!getline(ss, field, '|')) {
-            player.registrationDate[0] = '\0';
-        }
-        else {
-            copyString(player.registrationDate, field.c_str(), 50);
-        }
-
-        // Field 6: totalGames
-        if (!getline(ss, field, '|')) {
-            player.totalGames = 0;
-        }
-        else {
-            player.totalGames = std::atoi(field.c_str());
-        }
-
-        // Field 7: totalPoints
-        if (!getline(ss, field, '|')) {
-            player.totalPoints = 0;
-        }
-        else {
-            player.totalPoints = std::atoi(field.c_str());
-        }
-
-        /*
-        // Field 8: wins 
-        if (!getline(ss, field, '|')) {
-            player.wins = 0;
-        }
-        else {
-            player.wins = std::atoi(field.c_str());
-        }
-
-        // Field 9: losses - read rest of line
-        if (!getline(ss, field)) {
-            player.losses = 0;
-        }
-        else {
-            player.losses = std::atoi(field.c_str());
-        }
-
-        */
-
-        users[userCount++] = player;
+        
+        users[userCount] = player;
+        userCount++;
     }
-
+    
     file.close();
     return true;
 }
 
-bool authManager::saveUsers() {
+bool AuthManager::saveUsers() {
     ofstream file(usersFile);
     if (!file.is_open()) {
         return false;
@@ -324,8 +275,8 @@ bool authManager::saveUsers() {
             << users[i].registrationDate << "|"
             << users[i].totalGames << "|"
             << users[i].totalPoints << "|"
-            //<< users[i].wins << "|"            
-            //<< users[i].losses << "\n";  
+            << users[i].wins << "|"            
+            << users[i].losses << "\n"
             << "\n";
     }
 
@@ -333,12 +284,8 @@ bool authManager::saveUsers() {
     return true;
 }
 
-void authManager::updatePlayerStats(int score) {
+void AuthManager::updatePlayerStats() {
     if (!loggedIn) return;
-
-    // Update current player
-    currentPlayer.totalGames++;
-    currentPlayer.totalPoints += score;
 
     // Update in users array
     for (int i = 0; i < userCount; i++) {
@@ -350,3 +297,4 @@ void authManager::updatePlayerStats(int score) {
 
     saveUsers();
 }
+

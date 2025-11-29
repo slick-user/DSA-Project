@@ -15,14 +15,13 @@ struct Player {
     char email[MAX_EMAIL_LEN];
     char registrationDate[50];
     int playerID;
-    
-    int totalGames;
-    int totalPoints;
-    int wins;
-    int losses;
-    // We'll add friends list and match history later
 
-    Player() : playerID(0), totalGames(0), totalPoints(0), wins(0), losses(0) {
+    int totalGames = 0;
+    int totalPoints = 0;
+    int wins = 0;
+    int losses = 0;
+    
+    Player() {
         memset(username, 0, MAX_USERNAME_LEN);
         memset(password, 0, MAX_PASSWORD_LEN);
         memset(nickname, 0, MAX_NICKNAME_LEN);
@@ -30,9 +29,19 @@ struct Player {
         memset(registrationDate, 0, 50);
         playerID = 0;
     }
+
+    // Helper method to check if username is empty
+    bool isUsernameEmpty() const {
+        return username[0] == '\0';
+    }
+
+    // Convert to std::string
+    std::string getUsernameString() const {
+        return std::string(username);
+    }
 };
 
-class authManager {
+class AuthManager {
 private:
     Player users[MAX_USERS];
     int userCount;
@@ -53,8 +62,8 @@ private:
     bool isValidPassword(const char* password);
     
 public:
-    authManager();
-    ~authManager();
+    AuthManager();
+    ~AuthManager();
     
     // Registration
     bool registerUser(const string& user, const string& password, 
@@ -69,13 +78,13 @@ public:
     // Current user
     Player getPlayer(const string& username);
     Player getCurrentPlayer() const { return currentPlayer; }
+    Player* getCurrentsPlayer() { return &currentPlayer; }
     bool isLoggedIn() const { return loggedIn; }
     void logout();
     
+    void updatePlayerStats();
+
     // File operations
     bool loadUsers();
     bool saveUsers();
-
-    void updatePlayerStats(int score);
 };
-

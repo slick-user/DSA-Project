@@ -1,28 +1,35 @@
-// Azlan Ali Khan 24I-2110 DSA FINAL PROJECT
-
 #pragma once
 
 #include "utilities.hpp"
-#include "gameManager.hpp"
 #include "authManager.hpp"
+#include "gameManager.hpp"
+#include "leaderboard.hpp"
+#include "avl_tree.hpp"
+#include "friendManager.hpp"
+#include "matchmaking.hpp"
 
-const int MAX_MENU_ITEMS = 6;
+const int MAX_MENU_ITEMS = 10;
 
 enum UI {
     NONE,
     MAIN,
     BACK_MAIN,
     START_UI,
+    LOAD_GAME_UI,
     SINGLE_PLAYER,
     MULTIPLAYER,
     LEVEL_SELECT,
-    EASY,
-    MEDIUM,
-    HARD,
-    LEADERBOARD,
+    EASY_LEVEL,
+    MEDIUM_LEVEL,
+    HARD_LEVEL,
+    LEADERBOARD_UI,
     THEMES,
     PROFILE,
     PROFILE_VIEW,
+    FRIENDS_MENU,
+    ADD_FRIEND,
+    MATCHMAKING_MENU,
+    FIND_MATCH,
     END,
     QUIT,
     AUTH_SCREEN,
@@ -44,7 +51,21 @@ public:
     MenuOptions runMainMenu(bool m);
     MenuOptions runAuthScreen();
     void setScore(int score);
-    bool isLoggedIn() const { return gameManager->isLoggedIn(); }
+    void setMultiplayerScores(int p1Score, int p2Score);
+    bool isLoggedIn() const { return AuthManager.isLoggedIn(); }
+    
+    // Getter methods
+    string getCurrentUsername() const { return string(currentPlayer.username); }
+    int getCurrentPlayerID() const { return currentPlayer.playerID; }
+    Player getCurrentPlayer() const { return currentPlayer; }
+    GameLevel getSelectedLevel() const { return selectedLevel; }
+    GameMode getSelectedMode() const { return selectedMode; }
+    
+    // Second player for multiplayer
+    string getPlayer2Username() const { return player2Name; }
+    int getPlayer2ID() const { return player2ID; }
+    
+    Color getBackgroundColor() const { return bgColor; }
 
 private:
     // Window and rendering
@@ -54,7 +75,15 @@ private:
     int fontSize = 45;
     Color bgColor;
     Color fontColor = { 255, 255, 255 };
-    int theme;
+    
+    // Theme structure managed by AVL Tree
+    AVLTree themeTree;
+    int currentThemeIndex;
+    
+    // Helper to get current theme
+    Theme getCurrentTheme() {
+        return themeTree.getThemeByIndex(currentThemeIndex);
+    }
 
     // Menu items
     MenuItem menuItems[MAX_MENU_ITEMS];
@@ -62,15 +91,47 @@ private:
     int selectedIndex;
     UI currentMenuType;
     int currentScore;
+    int player1Score;
+    int player2Score;
 
     // Authentication
-    GameManager* gameManager;
-    //authManager authManager;
+    //GameManager* gameManager;
+    AuthManager AuthManager;
     Player currentPlayer;
     string username;
     string password;
     string loginError;
     string registerError;
+
+    // Leaderboard
+    Leaderboard leaderboard;
+    
+    // Friend Manager
+    FriendManager friendManager;
+    char friendInput[100];
+    int friendInputLen;
+    string friendError;
+    string friendSuccess;
+    int selectedRequestIndex;
+    bool showingRequests;
+    
+    // Matchmaking
+    MatchmakingQueue matchmakingQueue;
+    bool isSearching;
+    Clock searchTimer;
+    string searchStatus;
+    
+    // Level and mode selection
+    GameLevel selectedLevel;
+    GameMode selectedMode;
+    bool lastGameWasMultiplayer;
+    
+    // Multiplayer - second player
+    string player2Name;
+    int player2ID;
+    char player2Input[100];
+    int player2InputLen;
+    bool waitingForPlayer2;
 
     // Input handling
     char usernameInput[100];
@@ -94,20 +155,27 @@ private:
     void setupRegisterMenu();
     void setupMainMenu();
     void setupStartMenu();
-    void setupProfileMenu();
-    void setupProfileView();
     void setupLevelSelect();
     void setupLeaderBoard();
+    void setupProfileMenu();
+    void setupProfileView();
+    void setupFriendsMenu();
+    void setupMatchmakingMenu();
     void setupEndMenu();
+    void setupMultiplayerSetup();
     void switchTheme();
 
     // ===== Input Handling =====
     void handleTextInput(sf::Event& e);
     void handleBackspace();
     void handleCharInput(char c);
+    void handleFriendInput(char c);
     void handleTabKey();
     UI handleEnterKey();
     UI attemptRegister();
+    void attemptAddFriend();
+    void startMatchmaking();
+    void updateMatchmaking();
     void handleKeyboard(sf::Event& e, UI& final_action);
     void handleMouse(sf::Event& e, UI& final_action);
 
@@ -116,12 +184,16 @@ private:
 
     // ===== Rendering =====
     void updateColors();
+    void update();
     void render();
     void renderLoginScreen();
     void renderRegisterScreen();
     void renderAuthScreen();
-    void renderNormalMenu();
+    void renderLeaderBoard();
+    void renderFriendsMenu();
     void renderProfileMenu();
     void renderProfileView();
+    void renderMatchmakingMenu();
+    void renderNormalMenu();
+    void renderMultiplayerSetup();
 };
-

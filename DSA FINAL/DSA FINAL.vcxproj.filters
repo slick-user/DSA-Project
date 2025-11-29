@@ -42,6 +42,24 @@
     <ClCompile Include="gameManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="check.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="friendManager.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="leaderboard.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="matchmaking.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="player.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="saveManager.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\enemy.png">
@@ -82,6 +100,27 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="gameManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="avl_tree.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="friendManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="leaderboard.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="matchmaking.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="player.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="saveManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="theme.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
