@@ -16,20 +16,20 @@ Use this to coordinate development and ensure all modules stay consistent across
 
 ## Start Menu
 - [x] Start Game
-- [~] Select Level
-- [~] Leaderboard
-- [~] Multiplayer Mode Selection
-- [ ] Profile Section Access
+- [x] Select Level
+- [x] Leaderboard
+- [x] Multiplayer Mode Selection
+- [x] Profile Section Access
 
 ## End Menu
 - [~] End the game cleanly (resource cleanup, save score)
 - [x] Display final score
-- [ ] Highlight new high score
+- [x] Highlight new high score
 - [x] Options: Restart, Main Menu, Exit Game
 
 ## Additional Menu Features
 - [ ] Settings Menu (Sound, Controls, Themes)
-- [ ] Theme Selector (connected to AVL Theme Inventory)
+- [~] Theme Selector (connected to AVL Theme Inventory)
 - [?] Tutorial / How to Play
 - [?] Credits Page
 
@@ -41,7 +41,7 @@ Use this to coordinate development and ensure all modules stay consistent across
 - [x] Register new users with:
   - [x] Unique username
   - [x] Secure password
-  - [~] Optional nickname, email, etc.
+  - [x] Optional nickname, email, etc.
 - [x] Input validation:
   - [x] Username uniqueness check
   - [x] Password strength check (min length)
@@ -78,16 +78,16 @@ Use this to coordinate development and ensure all modules stay consistent across
 # **4. Player Profile System**
 
 Each profile includes:
-- [ ] Username
-- [ ] Friends List
-- [ ] Match History (Win/Loss)
-- [ ] Total Points
+- [x] Username
+- [x] Friends List
+- [x] Match History (Win/Loss)
+- [x] Total Points
 - [ ] Saved Theme Preference
 - [ ] Saved Games List (via Save System)
 
 Operations:
-- [ ] View profile
-- [ ] Update profile data
+- [x] View profile
+- [x] Update profile data
 - [ ] Sync with Leaderboard and Matchmaking Queue
 
 ---
@@ -95,41 +95,40 @@ Operations:
 # **5. Multiplayer Mode**
 
 ## Game Logic
-- [ ] Support two-player mode on shared board
-- [ ] Player controls:
-  - [ ] Player 1: Arrow Keys
-  - [ ] Player 2: Q, G, A, X
-- [ ] Shared game timer
-- [ ] Separate scores & power-ups displayed on screen
+- [x] Support two-player mode on shared board
+- [x] Player controls:
+  - [x] Player 1: Arrow Keys
+  - [x] Player 2: Q, G, A, X
+- [x] Separate scores & power-ups displayed on screen
 
 ## Collision Rules
-- [ ] Player–player collision handling:
-  - [ ] If both constructing → both die
-  - [ ] If P1 touches P2 constructing → P1 dies (and vice versa)
-  - [ ] If constructing vs not constructing → constructor dies
-- [ ] Power-up affects enemies AND the other player in multiplayer
+- [x] Player–player collision handling:
+  - [x] If both constructing → both die
+  - [x] If P1 touches P2 constructing → P1 dies (and vice versa)
+  - [x] If constructing vs not constructing → constructor dies
+- [x] Power-up affects enemies AND the other player in multiplayer
 
 ## Win Conditions
-- [ ] Game ends when both players die
-- [ ] Highest score wins
+- [x] Game ends when both players die
+- [x] Highest score wins
 
 ---
 
 # **6. Leaderboard (Min-Heap)**
 
 ## Data Structure
-- [ ] Implement Min-Heap of size 10
-- [ ] Root always contains lowest score among top 10
+- [x] Implement Min-Heap of size 10
+- [x] Root always contains lowest score among top 10
 
 ## Updating
-- [ ] Insert new players if leaderboard not full
-- [ ] Replace root if new score > current minimum
-- [ ] Heapify after insertion/removal
-- [ ] Sync scores with Player Profiles
+- [x] Insert new players if leaderboard not full
+- [x] Replace root if new score > current minimum
+- [x] Heapify after insertion/removal
+- [x] Sync scores with Player Profiles
 
 ## Display
-- [ ] Sort temporarily in descending order for display
-- [ ] Show Player ID & Total Score
+- [x] Sort temporarily in descending order for display
+- [x] Show Player ID & Total Score
 
 ---
 
@@ -155,60 +154,60 @@ Operations:
 # **9. Friend System (Array List + Linked List + Hash Table)**
 
 ## Player List (Array List)
-- [ ] Store player objects in dynamic array
-- [ ] Each player contains:
-  - [ ] Username / Player ID
-  - [ ] Linked list of friends
+- [x] Store player objects in dynamic array
+- [x] Each player contains:
+  - [x] Username / Player ID
+  - [x] Linked list of friends
 
 ## Hash Table
-- [ ] Map username → index in array list
+- [x] Map username → index in array list
 - [ ] Fast lookup for:
   - [ ] Sending friend requests
   - [ ] Accepting requests
   - [ ] Searching players
 
 ## Friend Request Operations
-- [ ] Send friend request
-- [ ] Accept or reject request
-- [ ] Update linked lists for both players
-- [ ] View friend list
+- [x] Send friend request
+- [x] Accept or reject request
+- [x] Update linked lists for both players
+- [x] View friend list
 
 ---
 
 # **10. Save Game System**
 
 ## Save Structure
-- [ ] Create `GameState` structure/class with:
-  - [ ] Timestamp
-  - [ ] Player ID
-  - [ ] Linked list of tiles created so far
-  - [ ] Current score + power-ups
+- [x] Create `GameState` structure/class with:
+  - [x] Timestamp
+  - [x] Player ID
+  - [x] Linked list of tiles created so far
+  - [x] Current score + power-ups
 
 ## Save / Load
-- [ ] Serialize `GameState` to file
-- [ ] Assign unique Save ID
-- [ ] Load by entering Save ID
-- [ ] Reconstruct game state fully
-- [ ] Resume game from saved point
+- [x] Serialize `GameState` to file
+- [x] Assign unique Save ID
+- [x] Load by entering Save ID
+- [x] Reconstruct game state fully
+- [x] Resume game from saved point
 
 ---
 
 # **11. Inventory System (AVL Tree Themes)**
 
 ## Initialization
-- [ ] Load predefined themes into AVL Tree
-- [ ] Each theme contains:
-  - [ ] Theme ID
-  - [ ] Theme Name
-  - [ ] Description
-  - [ ] Optional preview (color code or text)
+- [x] Load predefined themes into AVL Tree
+- [x] Each theme contains:
+  - [x] Theme ID
+  - [x] Theme Name
+  - [x] Description
+  - [x] Optional preview (color code or text)
 
 ## Tree Functionality
-- [ ] Insert theme
-- [ ] Search theme by ID
-- [ ] In-order traversal (sorted display)
-- [ ] Keep tree balanced (rotations)
-- [ ] Optional update/delete features
+- [x] Insert theme
+- [x] Search theme by ID
+- [x] In-order traversal (sorted display)
+- [x] Keep tree balanced (rotations)
+- [x] Optional update/delete features
 
 ## Theme Selection
 - [x] Implement Themes
@@ -221,7 +220,7 @@ Operations:
 # **12. General Enhancements & Polishing**
 - [x] Full UI pass (consistent, clean)
 - [x] File-handling error checking everywhere
-- [ ] Add sound effects toggle
+- [?] Add sound effects toggle
 - [~] Adjustable difficulty levels
 - [ ] Logs for debugging crashes or unexpected behavior
 
