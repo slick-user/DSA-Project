@@ -28,6 +28,10 @@ enum UI {
     PROFILE_VIEW,
     FRIENDS_MENU,
     ADD_FRIEND,
+    VIEW_FRIENDS,
+    VIEW_REQUESTS,
+    VIEW_SENT_REQUESTS,
+    REMOVE_FRIEND,
     MATCHMAKING_MENU,
     FIND_MATCH,
     END,
@@ -52,7 +56,7 @@ public:
     MenuOptions runAuthScreen();
     void setScore(int score);
     void setMultiplayerScores(int p1Score, int p2Score);
-    bool isLoggedIn() const { return AuthManager.isLoggedIn(); }
+    bool isLoggedIn() const { return gameManager->isLoggedIn(); }
     
     // Getter methods
     string getCurrentUsername() const { return string(currentPlayer.username); }
@@ -95,8 +99,8 @@ private:
     int player2Score;
 
     // Authentication
-    //GameManager* gameManager;
-    AuthManager AuthManager;
+    GameManager* gameManager;
+    //AuthManager AuthManager;
     Player currentPlayer;
     string username;
     string password;
@@ -113,7 +117,11 @@ private:
     string friendError;
     string friendSuccess;
     int selectedRequestIndex;
+
+    // Friend management states
+    bool showingFriends;
     bool showingRequests;
+    bool showingSentRequests;
     
     // Matchmaking
     MatchmakingQueue matchmakingQueue;
@@ -196,4 +204,8 @@ private:
     void renderMatchmakingMenu();
     void renderNormalMenu();
     void renderMultiplayerSetup();
+    void renderPendingRequests();
+    void renderSentRequests();
+    void renderAddFriendSection();
+    void renderFriendsList();
 };

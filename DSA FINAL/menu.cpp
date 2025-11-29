@@ -7,7 +7,8 @@ Menu::Menu(RenderWindow* window) : window(window), currentScore(0),
             currentInputField(0), isInputMode(false), selectedLevel(EASY),
             selectedMode(SINGLE_PLAYER_MODE), player1Score(0), player2Score(0),
             player2Name("Player2"), player2ID(0), player2InputLen(0), waitingForPlayer2(false),
-            lastGameWasMultiplayer(false) {
+            lastGameWasMultiplayer(false), showingFriends(true), showingRequests(false), 
+            showingSentRequests(false) {
 
     // Initialize Themes in AVL Tree
     // 1. Basic
@@ -99,6 +100,8 @@ Menu::Menu(RenderWindow* window) : window(window), currentScore(0),
     memset(nicknameInput, 0, 100);
     memset(emailInput, 0, 100);
     memset(player2Input, 0, 100);
+
+    gameManager = GameManager::getInstance();
 }
 
 // ===================== Helper Functions =====================
@@ -298,7 +301,7 @@ void Menu::setupEndMenu() {
         
         setItem(1, "Restart", 150, 200, MULTIPLAYER);
         setItem(2, "Main Menu", 150, 250, BACK_MAIN);
-        setItem(3, "Exit Game", 150, 300, QUIT);
+        setItem(3, "Exit Game", 150, 280, QUIT);
         
         finalizeBounds(2);
     } else {
@@ -359,24 +362,30 @@ void Menu::setupMultiplayerSetup() {
 
 void Menu::setupFriendsMenu() {
     currentMenuType = FRIENDS_MENU;
-    itemCount = 2;
+    itemCount = 5;
     selectedIndex = 0;
     clearMenuItems();
-    
+
     // Set current user for friend manager
     friendManager.setCurrentUser(string(currentPlayer.username));
-    
-    setItem(0, "Add Friend", 150, 280, ADD_FRIEND);
-    setItem(1, "Back", 350, 280, PROFILE);
-    
+
+    // Position menu items to leave space for content
+    setItem(0, "View Friends", 50, 80, VIEW_FRIENDS);
+    setItem(1, "Add Friend", 50, 120, ADD_FRIEND);
+    setItem(2, "Pending Requests", 50, 160, VIEW_REQUESTS);
+    setItem(3, "Sent Requests", 50, 200, VIEW_SENT_REQUESTS);
+    setItem(4, "Back", 50, 240, PROFILE);
+
     finalizeBounds(0);
-    
+
     memset(friendInput, 0, 100);
     friendInputLen = 0;
     friendError = "";
     friendSuccess = "";
     selectedRequestIndex = -1;
     showingRequests = false;
+    showingSentRequests = false;
+    showingFriends = true;
 }
 
 void Menu::handleFriendInput(char c) {
@@ -407,7 +416,7 @@ void Menu::attemptAddFriend() {
     }
     
     // Check if user exists (using AuthManager)
-    if (!AuthManager.isUsernameTaken(friendName)) {
+    if (!gameManager || !gameManager->isUsernameTaken(friendName)) {
         friendError = "User not found!";
         friendSuccess = "";
     } else if (friendManager.isFriend(friendName)) {
@@ -611,14 +620,14 @@ UI Menu::attemptRegister() {
         registerError = "Password must be 6 characters or greater";
         return NONE;
     }
-    else if (AuthManager.isUsernameTaken(username)) {
+    else if (gameManager->isUsernameTaken(username)) {
         registerError = "Username already taken!";
         return NONE;
     }
     else {
-        if (AuthManager.registerUser(username, password, nickname, email)) {
-            AuthManager.login(username, password);
-            currentPlayer = AuthManager.getCurrentPlayer();
+        if (gameManager->registerUser(username, password, nickname, email)) {
+            gameManager->login(username, password);
+            currentPlayer = gameManager->getCurrentPlayer();
             cout << "Registration successful! Welcome " << currentPlayer.username << endl;
             return MAIN;
         }
@@ -692,34 +701,71 @@ void Menu::handleMouse(sf::Event& e, UI& final_action) {
         int mouseX = e.mouseButton.x;
         int mouseY = e.mouseButton.y;
 
-        // Check friend request accept/reject buttons
+        // Handle friend action buttons (Remove, Accept, Reject, Cancel)
         if (currentMenuType == FRIENDS_MENU) {
-            FriendRequest pendingReqs[MAX_REQUESTS];
-            int reqCount = 0;
-            friendManager.getPendingRequests(pendingReqs, reqCount);
-            for (int i = 0; i < MAX_REQUESTS && i < 3; i++) {
-                int yPos = 130 + i * 25;
-                
-                // Accept button bounds (400, yPos, 70, 20)
-                if (mouseX >= 400 && mouseX <= 470 && mouseY >= yPos && mouseY <= yPos + 20) {
-                    if (friendManager.acceptFriendRequest(pendingReqs[i].from)) {
-                        friendSuccess = "Friend request accepted!";
+            // Handle friend removal buttons
+            if (showingFriends) {
+                string friendArray[MAX_FRIENDS];
+                int friendCount = 0;
+                friendManager.getFriendsList(friendArray, friendCount);
+                for (int i = 0; i < friendCount && i < 5; i++) {
+                    int yPos = 120 + i * 25;
+                    // Check if click is on the Remove button area
+                    if (mouseX >= 350 && mouseX <= 420 && mouseY >= yPos && mouseY <= yPos + 20) {
+                        friendManager.removeFriend(friendArray[i]);
+                        friendSuccess = "Friend removed: " + friendArray[i];
                         friendError = "";
+                        return;
                     }
-                    return;
                 }
-                
-                // Reject button bounds (480, yPos, 70, 20)
-                if (mouseX >= 480 && mouseX <= 550 && mouseY >= yPos && mouseY <= yPos + 20) {
-                    if (friendManager.rejectFriendRequest(pendingReqs[i].from)) {
-                        friendSuccess = "Friend request rejected!";
-                        friendError = "";
+            }
+
+            // Handle request accept/reject buttons
+            if (showingRequests) {
+                FriendRequest pendingReqs[MAX_REQUESTS];
+                int reqCount = 0;
+                friendManager.getPendingRequests(pendingReqs, reqCount);
+                for (int i = 0; i < reqCount && i < 4; i++) {
+                    int yPos = 120 + i * 35;
+                    // Accept button (350-410)
+                    if (mouseX >= 350 && mouseX <= 410 && mouseY >= yPos && mouseY <= yPos + 20) {
+                        if (friendManager.acceptFriendRequest(pendingReqs[i].from)) {
+                            friendSuccess = "Friend request accepted!";
+                            friendError = "";
+                        }
+                        return;
                     }
-                    return;
+                    // Reject button (420-480)
+                    if (mouseX >= 420 && mouseX <= 480 && mouseY >= yPos && mouseY <= yPos + 20) {
+                        if (friendManager.rejectFriendRequest(pendingReqs[i].from)) {
+                            friendSuccess = "Friend request rejected!";
+                            friendError = "";
+                        }
+                        return;
+                    }
+                }
+            }
+
+            // Handle cancel sent requests
+            if (showingSentRequests) {
+                FriendRequest sentReqs[MAX_REQUESTS];
+                int sentCount = 0;
+                friendManager.getSentRequests(sentReqs, sentCount);
+                for (int i = 0; i < sentCount && i < 4; i++) {
+                    int yPos = 120 + i * 35;
+                    // Cancel button (350-410)
+                    if (mouseX >= 350 && mouseX <= 410 && mouseY >= yPos && mouseY <= yPos + 20) {
+                        if (friendManager.rejectFriendRequest(sentReqs[i].to)) {
+                            friendSuccess = "Friend request canceled!";
+                            friendError = "";
+                        }
+                        return;
+                    }
                 }
             }
         }
 
+        // Handle regular menu items
         for (int i = 0; i < itemCount; ++i) {
             if (menuItems[i].action != NONE && isMouseOver(menuItems[i].bounds, mouseX, mouseY)) {
                 selectedIndex = i;
@@ -730,17 +776,18 @@ void Menu::handleMouse(sf::Event& e, UI& final_action) {
     }
 }
 
+
 MenuOptions Menu::processAction(UI action) {
     switch (action) {
     case SINGLE_PLAYER:
         if (currentMenuType == MULTIPLAYER) {
-            // Coming from multiplayer setup
             player2Name = string(player2Input);
             if (player2Name.empty()) player2Name = "Player2";
             player2ID = 999; // Temporary ID for guest player
             selectedMode = MULTIPLAYER_MODE;
             return PLAY;
-        } else {
+        }
+        else {
             // Regular single player
             selectedMode = SINGLE_PLAYER_MODE;
             return PLAY;
@@ -786,7 +833,27 @@ MenuOptions Menu::processAction(UI action) {
         setupFriendsMenu();
         break;
     case ADD_FRIEND:
-        attemptAddFriend();
+        showingFriends = false;
+        showingRequests = false;
+        showingSentRequests = false;
+        break;
+    case VIEW_FRIENDS:
+        showingFriends = true;
+        showingRequests = false;
+        showingSentRequests = false;
+        break;
+    case VIEW_REQUESTS:
+        showingFriends = false;
+        showingRequests = true;
+        showingSentRequests = false;
+        break;
+    case VIEW_SENT_REQUESTS:
+        showingFriends = false;
+        showingRequests = false;
+        showingSentRequests = true;
+        break;
+    case REMOVE_FRIEND:
+        // not really needed
         break;
     case MATCHMAKING_MENU:
         setupMatchmakingMenu();
@@ -798,8 +865,8 @@ MenuOptions Menu::processAction(UI action) {
         setupLoginMenu();
         break;
     case LOGIN:
-        if (AuthManager.login(username, password)) {
-            currentPlayer = AuthManager.getCurrentPlayer();
+        if (gameManager->login(username, password)) {
+            currentPlayer = gameManager->getCurrentPlayer();
             isInputMode = false;
             cout << "Login successful! Welcome " << currentPlayer.username << endl;
             setupMainMenu();
@@ -1133,17 +1200,42 @@ void Menu::renderMultiplayerSetup() {
     
     for (int i = 1; i < itemCount; ++i) {
         window->draw(menuItems[i].text);
-    }
+ 
+   }
 }
 
 void Menu::renderFriendsMenu() {
-    // Safety check - ensure window is valid
-    if (!window) return;
-
-    Text title("Friends List", font, fontSize);
-    title.setPosition(200, 30);
-    title.setFillColor(getCurrentTheme().titleColor);
+    Text title("Friends Management", font, fontSize);
+    title.setPosition(180, 30);
+    title.setFillColor(Color(255, 140, 0)); // Orange
     window->draw(title);
+
+    for (int i = 0; i < itemCount; ++i) {
+        window->draw(menuItems[i].text);
+    }
+
+    // Display different sections based on what's selected AFTER drawing menu items
+    if (showingFriends) {
+        renderFriendsList();
+    }
+    else if (showingRequests) {
+        renderPendingRequests();
+    }
+    else if (showingSentRequests) {
+        renderSentRequests();
+    }
+    else {
+        // This handles the case when "Add Friend" menu item is selected
+        renderAddFriendSection();
+    }
+
+}
+
+void Menu::renderFriendsList() {
+    Text sectionTitle("Your Friends", font, 24);
+    sectionTitle.setPosition(200, 80);
+    sectionTitle.setFillColor(Color(255, 140, 0)); // Orange
+    window->draw(sectionTitle);
 
     // Display friends
     string friendArray[MAX_FRIENDS];
@@ -1151,139 +1243,173 @@ void Menu::renderFriendsMenu() {
     friendManager.getFriendsList(friendArray, friendCount);
 
     if (friendCount == 0) {
-        Text noFriends("No friends yet!", font, 25);
-        noFriends.setPosition(100, 100);
-        noFriends.setFillColor(fontColor);
+        Text noFriends("No friends yet!", font, 18);
+        noFriends.setPosition(200, 120);
+        noFriends.setFillColor(Color(169, 169, 169)); // Dark gray
         window->draw(noFriends);
+
+        Text addHint("Use 'Add Friend' to find friends", font, 14);
+        addHint.setPosition(200, 150);
+        addHint.setFillColor(Color(128, 128, 128));
+        window->draw(addHint);
     }
     else {
-        for (int i = 0; i < friendCount && i < 3; i++) {
-            // Create and draw immediately - don't let Text objects persist
+        for (int i = 0; i < friendCount && i < 5; i++) {
             Text friendText;
             friendText.setFont(font);
-            friendText.setString(friendArray[i]);
-            friendText.setCharacterSize(20);
-            friendText.setPosition(100, 100 + i * 25);
-            friendText.setFillColor(fontColor);
+            friendText.setString(to_string(i + 1) + ". " + friendArray[i]);
+            friendText.setCharacterSize(16);
+            friendText.setPosition(200, 120 + i * 25);
+            friendText.setFillColor(Color(220, 220, 220)); // Light gray
             window->draw(friendText);
+
+            // Remove friend button - Orange
+            Text removeBtn;
+            removeBtn.setFont(font);
+            removeBtn.setString("[Remove]");
+            removeBtn.setCharacterSize(12);
+            removeBtn.setPosition(350, 120 + i * 25);
+            removeBtn.setFillColor(Color(255, 140, 0)); // Orange
+            window->draw(removeBtn);
         }
+
+        Text instruction("Click [Remove] to remove a friend", font, 12);
+        instruction.setPosition(200, 120 + min(friendCount, 5) * 25 + 5);
+        instruction.setFillColor(Color(255, 165, 0)); // Bright orange
+        window->draw(instruction);
     }
+}
+
+void Menu::renderPendingRequests() {
+    Text sectionTitle("Pending Requests", font, 24);
+    sectionTitle.setPosition(200, 80);
+    sectionTitle.setFillColor(Color(255, 140, 0)); // Orange
+    window->draw(sectionTitle);
 
     // Display pending friend requests
     FriendRequest pendingReqs[MAX_REQUESTS];
     int reqCount = 0;
     friendManager.getPendingRequests(pendingReqs, reqCount);
 
-    if (reqCount > 0) {
-        Text reqTitle;
-        reqTitle.setFont(font);
-        reqTitle.setString("Pending Requests:");
-        reqTitle.setCharacterSize(22);
-        reqTitle.setPosition(300, 100);
-        reqTitle.setFillColor(Color::Yellow);
-        window->draw(reqTitle);
-
-        for (int i = 0; i < reqCount && i < 3; i++) {
-            // Request text
+    if (reqCount == 0) {
+        Text noReqs("No pending requests", font, 18);
+        noReqs.setPosition(200, 120);
+        noReqs.setFillColor(Color(169, 169, 169)); // Dark gray
+        window->draw(noReqs);
+    }
+    else {
+        for (int i = 0; i < reqCount && i < 4; i++) {
+            // Request info
             Text reqText;
             reqText.setFont(font);
             reqText.setString(pendingReqs[i].from);
-            reqText.setCharacterSize(18);
-            reqText.setPosition(300, 130 + i * 25);
-            reqText.setFillColor(Color::White);
+            reqText.setCharacterSize(16);
+            reqText.setPosition(200, 120 + i * 35);
+            reqText.setFillColor(Color(220, 220, 220)); // Light gray
             window->draw(reqText);
 
-            // Accept button
+            // Accept button - Green
             Text acceptBtn;
             acceptBtn.setFont(font);
             acceptBtn.setString("[Accept]");
-            acceptBtn.setCharacterSize(16);
-            acceptBtn.setPosition(400, 130 + i * 25);
-            acceptBtn.setFillColor(Color::Green);
+            acceptBtn.setCharacterSize(12);
+            acceptBtn.setPosition(350, 120 + i * 35);
+            acceptBtn.setFillColor(Color(0, 255, 0)); // Green
             window->draw(acceptBtn);
 
-            // Reject button
+            // Reject button - Orange-red
             Text rejectBtn;
             rejectBtn.setFont(font);
             rejectBtn.setString("[Reject]");
-            rejectBtn.setCharacterSize(16);
-            rejectBtn.setPosition(480, 130 + i * 25);
-            rejectBtn.setFillColor(Color::Red);
+            rejectBtn.setCharacterSize(12);
+            rejectBtn.setPosition(420, 120 + i * 35);
+            rejectBtn.setFillColor(Color(255, 69, 0)); // Red-orange
             window->draw(rejectBtn);
         }
     }
+}
+
+void Menu::renderSentRequests() {
+    Text sectionTitle("Sent Requests", font, 24);
+    sectionTitle.setPosition(200, 80);
+    sectionTitle.setFillColor(Color(255, 140, 0)); // Orange
+    window->draw(sectionTitle);
+
+    // Display sent friend requests
+    FriendRequest sentReqs[MAX_REQUESTS];
+    int sentCount = 0;
+    friendManager.getSentRequests(sentReqs, sentCount);
+
+    if (sentCount == 0) {
+        Text noSent("No sent requests", font, 18);
+        noSent.setPosition(200, 120);
+        noSent.setFillColor(Color(169, 169, 169)); // Dark gray
+        window->draw(noSent);
+    }
+    else {
+        for (int i = 0; i < sentCount && i < 4; i++) {
+            Text reqText;
+            reqText.setFont(font);
+            reqText.setString(sentReqs[i].to);
+            reqText.setCharacterSize(16);
+            reqText.setPosition(200, 120 + i * 35);
+            reqText.setFillColor(Color(220, 220, 220)); // Light gray
+            window->draw(reqText);
+
+            // Cancel request button - Orange
+            Text cancelBtn;
+            cancelBtn.setFont(font);
+            cancelBtn.setString("[Cancel]");
+            cancelBtn.setCharacterSize(12);
+            cancelBtn.setPosition(350, 120 + i * 35);
+            cancelBtn.setFillColor(Color(255, 140, 0)); // Orange
+            window->draw(cancelBtn);
+        }
+    }
+}
+
+void Menu::renderAddFriendSection() {
+    Text sectionTitle("Add Friend", font, 24);
+    sectionTitle.setPosition(200, 80);
+    sectionTitle.setFillColor(Color(255, 140, 0)); // Orange
+    window->draw(sectionTitle);
 
     // Instructions
-    Text instructions;
-    instructions.setFont(font);
-    instructions.setString("Type username and press Enter to send request");
-    instructions.setCharacterSize(18);
-    instructions.setPosition(100, 180);
-    instructions.setFillColor(Color::Cyan);
+    Text instructions("Enter username:", font, 16);
+    instructions.setPosition(200, 120);
+    instructions.setFillColor(Color(255, 140, 0)); // Orange
     window->draw(instructions);
 
     // Add friend input
-    Text addLabel;
-    addLabel.setFont(font);
-    addLabel.setString("Add Friend: " + string(friendInput));
-    addLabel.setCharacterSize(25);
-    addLabel.setPosition(100, 210);
+    Text addLabel("> " + string(friendInput), font, 18);
+    addLabel.setPosition(200, 150);
     addLabel.setFillColor(getCurrentTheme().highlightColor);
     window->draw(addLabel);
 
     if (!friendError.empty()) {
-        Text error;
-        error.setFont(font);
-        error.setString(friendError);
-        error.setCharacterSize(20);
-        error.setPosition(100, 245);
+        Text error(friendError, font, 14);
+        error.setPosition(200, 180);
         error.setFillColor(Color::Red);
         window->draw(error);
     }
 
     if (!friendSuccess.empty()) {
-        Text success;
-        success.setFont(font);
-        success.setString(friendSuccess);
-        success.setCharacterSize(20);
-        success.setPosition(100, 245);
+        Text success(friendSuccess, font, 14);
+        success.setPosition(200, 180);
         success.setFillColor(Color::Green);
         window->draw(success);
     }
 
-    // Draw menu items (Add button and Back)
-    for (int i = 0; i < itemCount; ++i) {
-        window->draw(menuItems[i].text);
-    }
+    // Friend count display
+    int friendCount = friendManager.getFriendsCount();
+    Text countText("Friends: " + to_string(friendCount), font, 14);
+    countText.setPosition(200, 210);
+    countText.setFillColor(Color(255, 165, 0)); // Orange
+    window->draw(countText);
 }
 
 void Menu::renderMatchmakingMenu() {
-    Text title("Matchmaking", font, fontSize);
-    title.setPosition(200, 30);
-    title.setFillColor(getCurrentTheme().titleColor);
-    window->draw(title);
-    
-    Text status(searchStatus, font, 25);
-    status.setPosition(100, 200);
-    status.setFillColor(isSearching ? getCurrentTheme().highlightColor : fontColor);
-    window->draw(status);
-    
-    if (isSearching) {
-        // Simple loading animation
-        int dots = (int)(searchTimer.getElapsedTime().asSeconds() * 2) % 4;
-        string loading = "";
-        for (int i = 0; i < dots; i++) loading += ".";
-        
-        Text loadingText(loading, font, 40);
-        loadingText.setPosition(100, 250);
-        loadingText.setFillColor(getCurrentTheme().highlightColor);
-        window->draw(loadingText);
-    }
-    
-    // Draw menu items
-    for (int i = 0; i < itemCount; ++i) {
-        window->draw(menuItems[i].text);
-    }
+    return;
 }
 
 void Menu::render() {
@@ -1330,7 +1456,7 @@ MenuOptions Menu::runMainMenu(bool m) {
         return EXIT;
     }
 
-    if (!AuthManager.isLoggedIn() && m) {
+    if (!gameManager || !gameManager->isLoggedIn() && m) {
         setupLoginMenu();
     }
     else if (m) {

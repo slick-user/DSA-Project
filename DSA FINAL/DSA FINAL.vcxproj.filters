@@ -43,22 +43,22 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="check.cpp">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="friendManager.cpp">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="leaderboard.cpp">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="matchmaking.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="player.cpp">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="saveManager.cpp">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="player.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

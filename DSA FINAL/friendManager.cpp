@@ -1,7 +1,71 @@
 #include "friendManager.hpp"
 
-FriendManager::FriendManager() : currentUser(""), friendsFile("friends.txt"),
-requestsFile("friend_requests.txt"), pendingCount(0) {
+PlayerManager::PlayerManager() {
+    for (int i = 0; i < HASH_TABLE_SIZE; i++) {
+        playerTable[i] = nullptr;  // FIXED: Initialize array elements to nullptr
+    }
+}
+
+PlayerManager::~PlayerManager() {
+    for (int i = 0; i < HASH_TABLE_SIZE; i++) {
+        PlayerNode* current = playerTable[i];
+        while (current != nullptr) {
+            PlayerNode* temp = current;
+            current = current->next;
+
+            // Clean up friend list for this player
+            FriendNode* friendCurrent = temp->friends;
+            while (friendCurrent != nullptr) {
+                FriendNode* friendTemp = friendCurrent;
+                friendCurrent = friendCurrent->next;
+                delete friendTemp;
+            }
+
+            delete temp;
+        }
+    }
+}
+
+bool PlayerManager::playerExists(const string& username) {
+    int index = hashFunction(username);
+    PlayerNode* current = playerTable[index];
+
+    while (current != nullptr) {
+        if (current->username == username) {
+            return true;
+        }
+        current = current->next;
+    }
+    return false;
+}
+
+PlayerNode* PlayerManager::getPlayer(const string& username) {
+    int index = hashFunction(username);
+    PlayerNode* current = playerTable[index];
+
+    while (current != nullptr) {
+        if (current->username == username) {
+            return current;
+        }
+        current = current->next;
+    }
+    return nullptr;
+}
+
+void PlayerManager::addPlayer(const string& username) {
+    if (playerExists(username)) return;
+
+    int index = hashFunction(username);
+    PlayerNode* newNode = new PlayerNode(username);
+    newNode->next = playerTable[index];
+    playerTable[index] = newNode;
+}
+
+// FriendManager
+FriendManager::FriendManager(PlayerManager* pm) :
+    playerManager(pm), currentUser(""), friendsFile("friends.txt"),
+    requestsFile("friend_requests.txt"), pendingCount(0) {
+
     for (int i = 0; i < HASH_TABLE_SIZE; i++) {
         friendsTable[i] = nullptr;
     }
@@ -18,6 +82,13 @@ FriendManager::~FriendManager() {
         }
     }
 }
+
+bool FriendManager::searchPlayer(const string& username) {
+    if (playerManager == nullptr) return false;
+    return playerManager->playerExists(username);
+}
+
+
 
 void FriendManager::setCurrentUser(const string& username) {
     currentUser = username;
@@ -128,6 +199,11 @@ int FriendManager::getFriendsCount() {
 // ==================== Friend Request System ====================
 
 bool FriendManager::sendFriendRequest(const string& to) {
+    // Safe PlayerManager check
+    if (playerManager && !playerManager->playerExists(to)) {
+        return false;  // Player not found
+    }
+
     // Check if already friends
     if (isFriend(to)) return false;
 
@@ -152,6 +228,7 @@ bool FriendManager::sendFriendRequest(const string& to) {
     return false; // No space for new requests
 }
 
+
 bool FriendManager::acceptFriendRequest(const string& from) {
     int index = findRequest(from, currentUser);
     if (index == -1) return false;
@@ -162,7 +239,18 @@ bool FriendManager::acceptFriendRequest(const string& from) {
     // Add both users as friends
     addFriend(from);
 
-    // Add reverse friendship (from's perspective)
+    // If PlayerManager exists, update the other player's friend list too
+    if (playerManager) {
+        PlayerNode* fromPlayer = playerManager->getPlayer(from);
+        if (fromPlayer) {
+            // Add current user to the other player's friend list
+            FriendNode* newFriend = new FriendNode(currentUser);
+            newFriend->next = fromPlayer->friends;
+            fromPlayer->friends = newFriend;
+        }
+    }
+
+    // Add reverse friendship to file
     ofstream file(friendsFile, ios::app);
     if (file.is_open()) {
         file << from << " " << currentUser << endl;
@@ -172,6 +260,7 @@ bool FriendManager::acceptFriendRequest(const string& from) {
     saveRequests();
     return true;
 }
+
 
 bool FriendManager::rejectFriendRequest(const string& from) {
     int index = findRequest(from, currentUser);
@@ -260,10 +349,6 @@ void FriendManager::loadFriends() {
         }
         file.close();
     }
-}
-
-void FriendManager::saveFriends() {
-    // Not needed as we append/rewrite on add/remove
 }
 
 void FriendManager::loadRequests() {
