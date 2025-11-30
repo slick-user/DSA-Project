@@ -1,3 +1,4 @@
+// Azlan Ali Khan 24I-2110, Sameer Hussain 24I-2042, DSA FINAL PROJECT
 #include "player.hpp"
 
 GamePlayer::GamePlayer(int startX, int startY, int playerNum, Grid* grid)

@@ -1,5 +1,4 @@
-// Azlan Ali Khan 24I-2110 DSA FINAL PROJECT
-
+// Azlan Ali Khan 24I-2110, Sameer Hussain 24I-2042, DSA FINAL PROJECT
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <time.h>

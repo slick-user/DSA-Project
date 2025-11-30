@@ -1,4 +1,5 @@
-﻿#include "inventory.hpp"
+﻿// Azlan Ali Khan 24I-2110, Sameer Hussain 24I-2042, DSA FINAL PROJECT
+#include "inventory.hpp"
 #include <iostream>
 
 Inventory::Inventory(float x, float y, float width, float height)
