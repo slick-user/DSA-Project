@@ -54,5 +54,17 @@ public:
     bool isUsernameTaken(const string& username) {
         return auth.isUsernameTaken(username);
     }
+
+    int getUserCount() const {
+        return auth.getUserCount();
+    }
+
+    Player getUserByIndex(int index) const {
+        if (index >= 0 && index < auth.getUserCount()) {
+            return auth.getUserAtIndex(index);
+        }
+        return Player();
+    }
+
 };
 

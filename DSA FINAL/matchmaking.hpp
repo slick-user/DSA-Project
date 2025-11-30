@@ -9,8 +9,10 @@ struct QueuePlayer {
     string username;
     int score;
     int rank;
+    int id;
 
-    QueuePlayer(string u = "", int s = 0, int r = 0) : username(u), score(s), rank(r) {}
+    QueuePlayer(string u = "", int s = 0, int r = 0, int id=0) : 
+                username(u), score(s), rank(r), id(id) {}
 
     // Comparison for Priority Queue (Max-Heap based on score)
     bool operator<(const QueuePlayer& other) const {
@@ -221,8 +223,8 @@ public:
     MatchmakingQueue();
 
     // Player management
-    void addPlayer(const string& username, int score, int rank);
-    void addPlayerFromLeaderboard(const string& username, Leaderboard& lb);
+    void addPlayer(const string& username, int score, int rank, int playerID);
+    void addPlayerFromLeaderboard(const string& username, Leaderboard& lb, int playerID);
     QueuePlayer extractMax(); // Get best match (highest score)
     QueuePlayer peekMax();
     bool isEmpty();

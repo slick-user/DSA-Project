@@ -3,7 +3,8 @@
 
 Inventory::Inventory(float x, float y, float width, float height)
     : capacity(20), size(0), selectedIndex(0), scrollOffset(0), isActive(false),
-    panelX(x), panelY(y), panelWidth(width), panelHeight(height) {
+    panelX(x), panelY(y), panelWidth(width), panelHeight(height),
+    isSearching(false), searchQuery("") {
     items = new InventoryItem[capacity];
     setupVisuals();
 }
@@ -34,6 +35,7 @@ void Inventory::updatePositions() {
 
     // Update title position (centered above panel)
     titleText.setPosition(panelX + (panelWidth - titleText.getLocalBounds().width) / 2, panelY - 25);
+
 }
 
 void Inventory::setupVisuals() {
@@ -69,6 +71,17 @@ void Inventory::setupVisuals() {
 
     statusText.setFont(font);
     statusText.setCharacterSize(12);
+
+    // Search box setup
+    searchBox.setSize(Vector2f(panelWidth - 100, 25));
+    searchBox.setFillColor(Color(40, 40, 50));
+    searchBox.setOutlineThickness(1);
+    searchBox.setOutlineColor(Color(100, 100, 150));
+
+    // Search text setup
+    searchText.setFont(font);
+    searchText.setCharacterSize(14);
+    searchText.setFillColor(Color::White);
 }
 
 void Inventory::initialize(AVLTree& tree) {
@@ -146,16 +159,137 @@ void Inventory::scroll(int direction) {
 
 void Inventory::toggle() {
     isActive = !isActive;
+    // Reset search state when closing inventory
+    if (!isActive) {
+        isSearching = false;
+        searchQuery = "";
+    }
+}
+
+// Search functionality implementation
+void Inventory::startSearch() {
+    isSearching = true;
+    searchQuery = "";
+    searchText.setString("> " + searchQuery);
+}
+
+void Inventory::handleSearchInput(Event& event) {
+    if (!isSearching) return;
+
+    if (event.type == Event::KeyPressed) {
+        if (event.key.code == Keyboard::Enter) {
+            // Perform search when Enter is pressed
+            performSearch();
+            isSearching = false;
+        }
+        else if (event.key.code == Keyboard::Escape) {
+            // Cancel search
+            isSearching = false;
+            searchQuery = "";
+        }
+        else if (event.key.code == Keyboard::BackSpace) {
+            // Handle backspace
+            if (!searchQuery.empty()) {
+                searchQuery.pop_back();
+                searchText.setString("> " + searchQuery);
+            }
+        }
+        // Handle number keys in KeyPressed event
+        else if (event.key.code >= Keyboard::Num0 && event.key.code <= Keyboard::Num9) {
+            // Convert key code to actual number character
+            char numberChar = '0' + (event.key.code - Keyboard::Num0);
+            searchQuery += numberChar;
+            searchText.setString("> " + searchQuery);
+        }
+    }
+    else if (event.type == Event::TextEntered) {
+        // Handle text input (numbers only for ID search)
+        if (event.text.unicode >= '0' && event.text.unicode <= '9') {
+            searchQuery += static_cast<char>(event.text.unicode);
+            searchText.setString("> " + searchQuery);
+        }
+    }
+}
+
+void Inventory::performSearch() {
+    if (searchQuery.empty()) return;
+
+    int searchId = std::stoi(searchQuery);
+
+    // Use the AVL tree's search functionality
+    Theme* foundTheme = themeTree.search(searchId);
+
+    if (foundTheme != nullptr) {
+        // Find the index of the theme in our items array
+        int foundIndex = -1;
+        for (int i = 0; i < size; i++) {
+            if (items[i].theme.id == searchId) {
+                foundIndex = i;
+                break;
+            }
+        }
+
+        if (foundIndex != -1) {
+            // Found the theme, select it and ensure it's visible
+            selectTheme(foundIndex);
+
+            // Adjust scroll to make the found item visible
+            if (foundIndex < scrollOffset) {
+                scrollOffset = foundIndex;
+            }
+            else if (foundIndex >= scrollOffset + 4) {
+                scrollOffset = foundIndex - 3;
+            }
+        }
+    }
 }
 
 void Inventory::render(RenderWindow* window) {
     if (!isActive) return;
 
     window->draw(background);
+
+    if (isSearching) {
+        // Center the search interface vertically and horizontally
+        float searchBoxWidth = panelWidth - 40;
+        float searchBoxHeight = 30;
+        float searchBoxX = panelX + 20;
+        float searchBoxY = panelY + (panelHeight - searchBoxHeight) / 2 - 20;
+
+        // Update search box size and position for centered look
+        searchBox.setSize(Vector2f(searchBoxWidth, searchBoxHeight));
+        searchBox.setPosition(searchBoxX, searchBoxY);
+        window->draw(searchBox);
+
+        // Position search text inside the box
+        searchText.setPosition(searchBoxX + 10, searchBoxY + 5);
+        window->draw(searchText);
+
+        // Search title above the box
+        Text searchTitle("SEARCH THEME BY ID", font, 16);
+        searchTitle.setFillColor(Color::Yellow);
+        searchTitle.setPosition(panelX + (panelWidth - searchTitle.getLocalBounds().width) / 2, panelY + 30);
+        window->draw(searchTitle);
+
+        // Search instructions below the box
+        Text instructions("Enter theme ID number and press ENTER", font, 12);
+        instructions.setFillColor(Color::Cyan);
+        instructions.setPosition(panelX + (panelWidth - instructions.getLocalBounds().width) / 2, searchBoxY + 40);
+        window->draw(instructions);
+
+        Text instructions2("Press ESC to cancel", font, 12);
+        instructions2.setFillColor(Color(150, 150, 150));
+        instructions2.setPosition(panelX + (panelWidth - instructions2.getLocalBounds().width) / 2, searchBoxY + 60);
+        window->draw(instructions2);
+
+        return;
+    }
+
+    // Normal inventory rendering (rest of your existing code remains the same)
     window->draw(titleText);
 
     // Calculate positions relative to panel
-    float itemStartY = panelY + 10;
+    float itemStartY = panelY + 10; // Changed back to original position
     float itemSpacing = 35;
     int visibleItems = min(4, size - scrollOffset);
 
@@ -248,11 +382,7 @@ void Inventory::render(RenderWindow* window) {
 
         // Status text
         statusText.setPosition(panelX + 10, previewY + 50);
-        if (!items[selectedIndex].unlocked) {
-            statusText.setString("Locked - Complete achievements!");
-            statusText.setFillColor(Color::Red);
-        }
-        else if (items[selectedIndex].selected) {
+        if (items[selectedIndex].selected) {
             statusText.setString("Active - ENTER to confirm");
             statusText.setFillColor(Color::Green);
         }
@@ -263,9 +393,9 @@ void Inventory::render(RenderWindow* window) {
         window->draw(statusText);
     }
 
-    // Instructions below the panel
+    // Instructions below the panel (updated to include search)
     float instructionsY = panelY + panelHeight + 10;
-    Text instructions("UP/DOWN: Navigate  ENTER: Select", font, 10);
+    Text instructions("UP/DOWN: Navigate  ENTER: Select  F: Search", font, 10);
     instructions.setPosition(panelX, instructionsY);
     instructions.setFillColor(Color(150, 150, 150));
     window->draw(instructions);
@@ -291,29 +421,45 @@ void Inventory::render(RenderWindow* window) {
 void Inventory::handleInput(Event& event) {
     if (!isActive) return;
 
+    // Handle search input first if searching
+    if (isSearching) {
+        handleSearchInput(event);
+    }
+
     if (event.type == Event::KeyPressed) {
         switch (event.key.code) {
         case Keyboard::Up:
         case Keyboard::W:
-            scroll(-1);
+            if (!isSearching) scroll(-1); // Only scroll if not searching
             break;
         case Keyboard::Down:
         case Keyboard::S:
-            scroll(1);
+            if (!isSearching) scroll(1); // Only scroll if not searching
             break;
         case Keyboard::Enter:
         case Keyboard::Space:
-            selectTheme(selectedIndex);
+            if (!isSearching) selectTheme(selectedIndex);
+            // If searching, Enter is handled in handleSearchInput
+            break;
+        case Keyboard::F:  // Add search key (F for find)
+            if (!isSearching) startSearch();
             break;
         case Keyboard::Escape:
-            toggle();
+            if (isSearching) {
+                // Cancel search
+                isSearching = false;
+                searchQuery = "";
+            }
+            else {
+                toggle();
+            }
             break;
         default:
             break;
         }
     }
 
-    if (event.type == Event::MouseWheelScrolled) {
+    if (event.type == Event::MouseWheelScrolled && !isSearching) {
         if (event.mouseWheelScroll.delta > 0) {
             scroll(-1);
         }

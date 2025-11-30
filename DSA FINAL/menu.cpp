@@ -1,14 +1,14 @@
 #include "menu.hpp"
 
 // Constructor 
-
 Menu::Menu(RenderWindow* window) : window(window), currentScore(0),
             usernameLen(0), passwordLen(0), nicknameLen(0), emailLen(0),
             currentInputField(0), isInputMode(false), selectedLevel(EASY),
             selectedMode(SINGLE_PLAYER_MODE), player1Score(0), player2Score(0),
             player2Name("Player2"), player2ID(0), player2InputLen(0), waitingForPlayer2(false),
-            lastGameWasMultiplayer(false), showingFriends(true), showingRequests(false), 
-            showingSentRequests(false), showInventory(false) {
+            lastGameWasMultiplayer(false), showingFriends(true), showingRequests(false),
+            showingSentRequests(false), showInventory(false), selectedPlayerIndex(0), inGameRoom(false),
+            matchmakingTolerance(500) {
 
     themeInventory = new Inventory(100, 50, 300, 300);
 
@@ -225,14 +225,14 @@ void Menu::setupMainMenu() {
 
 void Menu::setupProfileMenu() {
     currentMenuType = PROFILE;
-    itemCount = 4;
+    itemCount = 3;
     selectedIndex = 0;
     clearMenuItems();
 
     setItem(0, "View Profile", 150, 100, PROFILE_VIEW);
-    setItem(1, "Friends List", 150, 160, FRIENDS_MENU);  // To be implemented
-    setItem(2, "Match History", 150, 220, NONE); // To be implemented
-    setItem(3, "Back", 150, 280, BACK_MAIN);
+    setItem(1, "Friends List", 150, 160, FRIENDS_MENU);
+    //setItem(2, "Match History", 150, 220, NONE); // To be implemented
+    setItem(2, "Back", 150, 280, BACK_MAIN);
 
     finalizeBounds(0);
 }
@@ -255,8 +255,9 @@ void Menu::setupStartMenu() {
     clearMenuItems();
 
     setItem(0, "Single Player", 150, 150, SINGLE_PLAYER);
-    setItem(1, "Multiplayer", 150, 220, MULTIPLAYER);
-    setItem(2, "Back", 150, 290, BACK_MAIN);
+    //setItem(1, "Multiplayer", 150, 200, MULTIPLAYER);
+    setItem(1, "Multiplayer", 150, 210, GAME_ROOM_UI);
+    setItem(2, "Back", 150, 280, BACK_MAIN);
 
     finalizeBounds(0);
 }
@@ -382,11 +383,11 @@ void Menu::setupFriendsMenu() {
     friendManager.setCurrentUser(string(currentPlayer.username));
 
     // Position menu items to leave space for content
-    setItem(0, "View Friends", 50, 80, VIEW_FRIENDS);
-    setItem(1, "Add Friend", 50, 120, ADD_FRIEND);
-    setItem(2, "Pending Requests", 50, 160, VIEW_REQUESTS);
-    setItem(3, "Sent Requests", 50, 200, VIEW_SENT_REQUESTS);
-    setItem(4, "Back", 50, 240, PROFILE);
+    setItem(0, "View Friends", 10, 80, VIEW_FRIENDS);
+    setItem(1, "Add Friend", 10, 120, ADD_FRIEND);
+    setItem(2, "Pending Requests", 10, 160, VIEW_REQUESTS);
+    setItem(3, "Sent Requests", 10, 200, VIEW_SENT_REQUESTS);
+    setItem(4, "Back", 10, 240, PROFILE);
 
     finalizeBounds(0);
 
@@ -465,10 +466,10 @@ void Menu::setupMatchmakingMenu() {
     
     // Add some dummy players to queue for simulation
     if (matchmakingQueue.isEmpty()) {
-        matchmakingQueue.addPlayer("ProGamer123", 1500, 1);
-        matchmakingQueue.addPlayer("NoobMaster69", 500, 5);
-        matchmakingQueue.addPlayer("AverageJoe", 1000, 3);
-        matchmakingQueue.addPlayer("XonixKing", 2000, 1);
+        matchmakingQueue.addPlayer("ProGamer123", 1500, 1, 123);
+        matchmakingQueue.addPlayer("NoobMaster69", 500, 5, 155);
+        matchmakingQueue.addPlayer("AverageJoe", 1000, 3, 5124);
+        matchmakingQueue.addPlayer("XonixKing", 2000, 1, 513);
     }
 }
 
@@ -478,8 +479,7 @@ void Menu::startMatchmaking() {
     searchStatus = "Searching for opponent...";
     
     // Add current player to queue
-    // In a real system, this would send a request to server
-    matchmakingQueue.addPlayer(string(currentPlayer.username), 1000, 1); // Assuming 1000 score for now
+    matchmakingQueue.addPlayer(string(currentPlayer.username), 1000, 1, currentPlayer.playerID); // Assuming 1000 score for now
 }
 
 void Menu::updateMatchmaking() {
@@ -669,11 +669,42 @@ void Menu::handleKeyboard(sf::Event& e, UI& final_action) {
         return;
     }
 
+    // Handle game room navigation
+    if (currentMenuType == GAME_ROOM) {
+        if (e.key.code == Keyboard::Up || e.key.code == Keyboard::W) {
+            if (selectedPlayerIndex > 0) {
+                selectedPlayerIndex--;
+            }
+            return;
+        }
+        else if (e.key.code == Keyboard::Down || e.key.code == Keyboard::S) {
+            if (selectedPlayerIndex < availablePlayers.getSize() - 1) {
+                selectedPlayerIndex++;
+            }
+            return;
+        }
+        else if (e.key.code == Keyboard::Enter || e.key.code == Keyboard::Space) {
+            if (availablePlayers.getSize() > 0) {
+                final_action = START_GAME_WITH_SELECTED;
+            }
+            return;
+        }
+        else if (e.key.code == Keyboard::R) {
+            final_action = REFRESH_PLAYERS;
+            return;
+        }
+        else if (e.key.code == Keyboard::Escape) {
+            final_action = BACK_MAIN;
+            return;
+        }
+    }
+
     // Handle input mode keys
     if (currentMenuType == FRIENDS_MENU) {
         if (e.key.code == Keyboard::Enter) {
             handleFriendInput('\r'); // Simulate Enter key press for friend input
-        } else if (e.key.code == Keyboard::Escape) {
+        }
+        else if (e.key.code == Keyboard::Escape) {
             setupMainMenu(); // Go back to main menu from friends menu
         }
         return;
@@ -718,6 +749,24 @@ void Menu::handleMouse(sf::Event& e, UI& final_action) {
         int mouseX = e.mouseMove.x;
         int mouseY = e.mouseMove.y;
 
+        // Handle game room player selection
+        if (currentMenuType == GAME_ROOM) {
+            for (int i = 0; i < availablePlayers.getSize() && i < 8; i++) {
+                // Create bounds manually for player selection
+                float boundsLeft = 120.0f;
+                float boundsTop = 160.0f + i * 30.0f;
+                float boundsWidth = 300.0f;
+                float boundsHeight = 25.0f;
+
+                if (mouseX >= boundsLeft && mouseX <= boundsLeft + boundsWidth &&
+                    mouseY >= boundsTop && mouseY <= boundsTop + boundsHeight) {
+                    selectedPlayerIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // Handle regular menu items
         for (int i = 0; i < itemCount; ++i) {
             if (menuItems[i].action != NONE && isMouseOver(menuItems[i].bounds, mouseX, mouseY)) {
                 selectedIndex = i;
@@ -729,6 +778,32 @@ void Menu::handleMouse(sf::Event& e, UI& final_action) {
         int mouseX = e.mouseButton.x;
         int mouseY = e.mouseButton.y;
 
+        // Handle game room player selection click
+        if (currentMenuType == GAME_ROOM) {
+            for (int i = 0; i < availablePlayers.getSize() && i < 8; i++) {
+                // Create bounds manually for player selection
+                float boundsLeft = 120.0f;
+                float boundsTop = 160.0f + i * 30.0f;
+                float boundsWidth = 300.0f;
+                float boundsHeight = 25.0f;
+
+                if (mouseX >= boundsLeft && mouseX <= boundsLeft + boundsWidth &&
+                    mouseY >= boundsTop && mouseY <= boundsTop + boundsHeight) {
+                    selectedPlayerIndex = i;
+                    break;
+                }
+            }
+
+            // Check if click is on menu items
+            for (int i = 0; i < itemCount; ++i) {
+                if (menuItems[i].action != NONE && isMouseOver(menuItems[i].bounds, mouseX, mouseY)) {
+                    selectedIndex = i;
+                    final_action = static_cast<UI>(menuItems[selectedIndex].action);
+                    break;
+                }
+            }
+            return;
+        }
         // Handle friend action buttons (Remove, Accept, Reject, Cancel)
         if (currentMenuType == FRIENDS_MENU) {
             // Handle friend removal buttons
@@ -793,7 +868,7 @@ void Menu::handleMouse(sf::Event& e, UI& final_action) {
             }
         }
 
-        // Handle regular menu items
+        // Handle regular menu items for other menus
         for (int i = 0; i < itemCount; ++i) {
             if (menuItems[i].action != NONE && isMouseOver(menuItems[i].bounds, mouseX, mouseY)) {
                 selectedIndex = i;
@@ -820,9 +895,9 @@ MenuOptions Menu::processAction(UI action) {
             selectedMode = SINGLE_PLAYER_MODE;
             return PLAY;
         }
-    case MULTIPLAYER:
-        setupMultiplayerSetup();
-        break;
+    //case MULTIPLAYER:
+        //setupMultiplayerSetup();
+        //break;
     case START_UI:
         setupStartMenu();
         break;
@@ -886,6 +961,87 @@ MenuOptions Menu::processAction(UI action) {
         break;
     case MATCHMAKING_MENU:
         setupMatchmakingMenu();
+        break;
+    case GAME_ROOM_UI:
+        setupGameRoom();
+        break;
+
+    case START_GAME_WITH_SELECTED:
+        if (availablePlayers.getSize() > 0) {
+            player2Name = availablePlayers[selectedPlayerIndex].username;
+            player2ID = availablePlayers[selectedPlayerIndex].id;
+            selectedMode = MULTIPLAYER_MODE;
+            inGameRoom = false;
+            return PLAY;
+        }
+        break;
+
+    case CHANGE_TOLERANCE:
+        // Cycle through tolerance levels: 200, 500, 1000, 2000
+        if (matchmakingTolerance == 200) matchmakingTolerance = 500;
+        else if (matchmakingTolerance == 500) matchmakingTolerance = 1000;
+        else if (matchmakingTolerance == 1000) matchmakingTolerance = 2000;
+        else matchmakingTolerance = 200;
+        populateGameRoomWithUsers(); // Re-populate with new tolerance
+        break;
+
+    case AUTO_MATCH:
+        // Use your existing matchmaking system to find the best match
+        if (!gameManager || !gameManager->isLoggedIn()) break;
+
+        {
+            string currentUsername = string(currentPlayer.username);
+            int currentPlayerScore = 1000;
+            LeaderboardEntry sorted[LEADERBOARD_SIZE];
+            leaderboard.getSortedEntries(sorted);
+            for (int i = 0; i < leaderboard.getSize(); i++) {
+                if (sorted[i].username == currentUsername) {
+                    currentPlayerScore = sorted[i].score;
+                    break;
+                }
+            }
+
+            // Use matchmaking queue to find best match
+            QueuePlayer bestMatch = matchmakingQueue.findMatch(currentPlayerScore, matchmakingTolerance);
+            if (!bestMatch.username.empty()) {
+                player2Name = bestMatch.username;
+                player2ID = 999;
+                selectedMode = MULTIPLAYER_MODE;
+                inGameRoom = false;
+                cout << "Auto-matched with: " << player2Name << " (Score: " << bestMatch.score << ")" << endl;
+                return PLAY;
+            }
+            else {
+                // No match found, refresh and select closest
+                populateGameRoomWithUsers();
+                if (availablePlayers.getSize() > 0) {
+                    selectedPlayerIndex = 0; // Select closest match
+                }
+            }
+        }
+        break;
+
+    case QUICK_PLAY:
+        // Quick play - use wider tolerance for faster matching
+        matchmakingTolerance = 2000;
+        populateGameRoomWithUsers();
+        if (availablePlayers.getSize() > 0) {
+            selectedPlayerIndex = 0; // Select first available
+            // Auto-start with closest match
+            player2Name = availablePlayers[selectedPlayerIndex].username;
+            player2ID = 999;
+            selectedMode = MULTIPLAYER_MODE;
+            inGameRoom = false;
+            return PLAY;
+        }
+        break;
+
+    case REFRESH_PLAYERS:
+        populateGameRoomWithUsers();
+        break;
+
+    case MULTIPLAYER:
+        setupGameRoom();
         break;
     case FIND_MATCH:
         startMatchmaking();
@@ -1080,7 +1236,7 @@ void Menu::renderProfileView() {
     playerIDInfo.setFillColor(fontColor);
     window->draw(playerIDInfo);
 
-    // Game statistics (to be populated from game data)
+    // Game statistics 
     Text statsTitle("Game Statistics", font, 28);
     statsTitle.setPosition(100, 240);
     statsTitle.setFillColor(Color::Cyan);
@@ -1235,7 +1391,7 @@ void Menu::renderMultiplayerSetup() {
 
 void Menu::renderFriendsMenu() {
     Text title("Friends Management", font, fontSize);
-    title.setPosition(180, 30);
+    title.setPosition(200, 30);
     title.setFillColor(Color(255, 140, 0)); // Orange
     window->draw(title);
 
@@ -1262,7 +1418,7 @@ void Menu::renderFriendsMenu() {
 
 void Menu::renderFriendsList() {
     Text sectionTitle("Your Friends", font, 24);
-    sectionTitle.setPosition(200, 80);
+    sectionTitle.setPosition(240, 80);
     sectionTitle.setFillColor(Color(255, 140, 0)); // Orange
     window->draw(sectionTitle);
 
@@ -1273,12 +1429,12 @@ void Menu::renderFriendsList() {
 
     if (friendCount == 0) {
         Text noFriends("No friends yet!", font, 18);
-        noFriends.setPosition(200, 120);
+        noFriends.setPosition(240, 120);
         noFriends.setFillColor(Color(169, 169, 169)); // Dark gray
         window->draw(noFriends);
 
         Text addHint("Use 'Add Friend' to find friends", font, 14);
-        addHint.setPosition(200, 150);
+        addHint.setPosition(240, 150);
         addHint.setFillColor(Color(128, 128, 128));
         window->draw(addHint);
     }
@@ -1297,13 +1453,13 @@ void Menu::renderFriendsList() {
             removeBtn.setFont(font);
             removeBtn.setString("[Remove]");
             removeBtn.setCharacterSize(12);
-            removeBtn.setPosition(350, 120 + i * 25);
+            removeBtn.setPosition(400, 120 + i * 25);
             removeBtn.setFillColor(Color(255, 140, 0)); // Orange
             window->draw(removeBtn);
         }
 
         Text instruction("Click [Remove] to remove a friend", font, 12);
-        instruction.setPosition(200, 120 + min(friendCount, 5) * 25 + 5);
+        instruction.setPosition(300, 120 + min(friendCount, 5) * 25 + 5);
         instruction.setFillColor(Color(255, 165, 0)); // Bright orange
         window->draw(instruction);
     }
@@ -1311,7 +1467,7 @@ void Menu::renderFriendsList() {
 
 void Menu::renderPendingRequests() {
     Text sectionTitle("Pending Requests", font, 24);
-    sectionTitle.setPosition(200, 80);
+    sectionTitle.setPosition(300, 80);
     sectionTitle.setFillColor(Color(255, 140, 0)); // Orange
     window->draw(sectionTitle);
 
@@ -1322,7 +1478,7 @@ void Menu::renderPendingRequests() {
 
     if (reqCount == 0) {
         Text noReqs("No pending requests", font, 18);
-        noReqs.setPosition(200, 120);
+        noReqs.setPosition(300, 120);
         noReqs.setFillColor(Color(169, 169, 169)); // Dark gray
         window->draw(noReqs);
     }
@@ -1333,7 +1489,7 @@ void Menu::renderPendingRequests() {
             reqText.setFont(font);
             reqText.setString(pendingReqs[i].from);
             reqText.setCharacterSize(16);
-            reqText.setPosition(200, 120 + i * 35);
+            reqText.setPosition(300, 120 + i * 35);
             reqText.setFillColor(Color(220, 220, 220)); // Light gray
             window->draw(reqText);
 
@@ -1342,7 +1498,7 @@ void Menu::renderPendingRequests() {
             acceptBtn.setFont(font);
             acceptBtn.setString("[Accept]");
             acceptBtn.setCharacterSize(12);
-            acceptBtn.setPosition(350, 120 + i * 35);
+            acceptBtn.setPosition(400, 120 + i * 35);
             acceptBtn.setFillColor(Color(0, 255, 0)); // Green
             window->draw(acceptBtn);
 
@@ -1360,7 +1516,7 @@ void Menu::renderPendingRequests() {
 
 void Menu::renderSentRequests() {
     Text sectionTitle("Sent Requests", font, 24);
-    sectionTitle.setPosition(200, 80);
+    sectionTitle.setPosition(300, 80);
     sectionTitle.setFillColor(Color(255, 140, 0)); // Orange
     window->draw(sectionTitle);
 
@@ -1371,7 +1527,7 @@ void Menu::renderSentRequests() {
 
     if (sentCount == 0) {
         Text noSent("No sent requests", font, 18);
-        noSent.setPosition(200, 120);
+        noSent.setPosition(300, 120);
         noSent.setFillColor(Color(169, 169, 169)); // Dark gray
         window->draw(noSent);
     }
@@ -1381,7 +1537,7 @@ void Menu::renderSentRequests() {
             reqText.setFont(font);
             reqText.setString(sentReqs[i].to);
             reqText.setCharacterSize(16);
-            reqText.setPosition(200, 120 + i * 35);
+            reqText.setPosition(300, 120 + i * 35);
             reqText.setFillColor(Color(220, 220, 220)); // Light gray
             window->draw(reqText);
 
@@ -1399,32 +1555,32 @@ void Menu::renderSentRequests() {
 
 void Menu::renderAddFriendSection() {
     Text sectionTitle("Add Friend", font, 24);
-    sectionTitle.setPosition(200, 80);
+    sectionTitle.setPosition(300, 80);
     sectionTitle.setFillColor(Color(255, 140, 0)); // Orange
     window->draw(sectionTitle);
 
     // Instructions
     Text instructions("Enter username:", font, 16);
-    instructions.setPosition(200, 120);
+    instructions.setPosition(300, 120);
     instructions.setFillColor(Color(255, 140, 0)); // Orange
     window->draw(instructions);
 
     // Add friend input
     Text addLabel("> " + string(friendInput), font, 18);
-    addLabel.setPosition(200, 150);
+    addLabel.setPosition(300, 150);
     addLabel.setFillColor(getCurrentTheme().highlightColor);
     window->draw(addLabel);
 
     if (!friendError.empty()) {
         Text error(friendError, font, 14);
-        error.setPosition(200, 180);
+        error.setPosition(300, 180);
         error.setFillColor(Color::Red);
         window->draw(error);
     }
 
     if (!friendSuccess.empty()) {
         Text success(friendSuccess, font, 14);
-        success.setPosition(200, 180);
+        success.setPosition(300, 180);
         success.setFillColor(Color::Green);
         window->draw(success);
     }
@@ -1432,9 +1588,259 @@ void Menu::renderAddFriendSection() {
     // Friend count display
     int friendCount = friendManager.getFriendsCount();
     Text countText("Friends: " + to_string(friendCount), font, 14);
-    countText.setPosition(200, 210);
+    countText.setPosition(300, 210);
     countText.setFillColor(Color(255, 165, 0)); // Orange
     window->draw(countText);
+}
+
+void Menu::populateGameRoomWithUsers() {
+    availablePlayers.clear();
+
+    if (!gameManager || !gameManager->isLoggedIn()) {
+        return;
+    }
+
+    string currentUsername = string(currentPlayer.username);
+
+    // Get current player's score once
+    int currentPlayerScore = getCurrentPlayerScore();
+
+    // Get leaderboard data once
+    LeaderboardEntry sorted[LEADERBOARD_SIZE];
+    leaderboard.getSortedEntries(sorted);
+    int leaderboardSize = leaderboard.getSize();
+
+    Vector<QueuePlayer> allEligiblePlayers;
+
+    // Get all eligible users in one pass
+    for (int i = 0; i < gameManager->getUserCount(); i++) {
+        Player user = gameManager->getUserByIndex(i);
+        string username = string(user.username);
+
+        // Skip the logged-in user and empty usernames
+        if (username == currentUsername || username.length() == 0) {
+            continue;
+        }
+
+        // Get user's score and rank
+        int userScore = 0;
+        int userRank = 999;
+
+        for (int j = 0; j < leaderboardSize; j++) {
+            if (sorted[j].username == username) {
+                userScore = sorted[j].score;
+                userRank = j + 1;
+                break;
+            }
+        }
+
+        // Calculate score difference
+        int scoreDiff = abs(currentPlayerScore - userScore);
+        QueuePlayer player(username, userScore, userRank, user.playerID);
+
+        // Separate logic for within tolerance vs all players
+        if (scoreDiff <= matchmakingTolerance) {
+            allEligiblePlayers.push_back(player);
+        }
+    }
+
+    // Sort by score proximity
+    sortPlayersByProximity(allEligiblePlayers, currentPlayerScore);
+
+    // If no players within tolerance, get all players and sort them
+    if (allEligiblePlayers.getSize() == 0) {
+        for (int i = 0; i < gameManager->getUserCount(); i++) {
+            Player user = gameManager->getUserByIndex(i);
+            string username = string(user.username);
+
+            if (username != currentUsername && username.length() > 0) {
+                int userScore = 0;
+                int userRank = 999;
+
+                for (int j = 0; j < leaderboardSize; j++) {
+                    if (sorted[j].username == username) {
+                        userScore = sorted[j].score;
+                        userRank = j + 1;
+                        break;
+                    }
+                }
+                allEligiblePlayers.push_back(QueuePlayer(username, userScore, userRank, user.playerID));
+            }
+        }
+        sortPlayersByProximity(allEligiblePlayers, currentPlayerScore);
+    }
+
+    // Limit to top 8 matches
+    availablePlayers.clear();
+    int limit = min(allEligiblePlayers.getSize(), 8);
+    for (int i = 0; i < limit; i++) {
+        availablePlayers.push_back(allEligiblePlayers[i]);
+    }
+
+    selectedPlayerIndex = 0;
+}
+
+int Menu::getCurrentPlayerScore() {
+    string currentUsername = string(currentPlayer.username);
+    LeaderboardEntry sorted[LEADERBOARD_SIZE];
+    leaderboard.getSortedEntries(sorted);
+
+    for (int i = 0; i < leaderboard.getSize(); i++) {
+        if (sorted[i].username == currentUsername) {
+            return sorted[i].score;
+        }
+    }
+    return 1000; // Default score if not found
+}
+
+void Menu::sortPlayersByProximity(Vector<QueuePlayer>& players, int targetScore) {
+    int size = players.getSize();
+    for (int i = 0; i < size - 1; i++) {
+        for (int j = 0; j < size - i - 1; j++) {
+            int diff1 = abs(players[j].score - targetScore);
+            int diff2 = abs(players[j + 1].score - targetScore);
+            if (diff1 > diff2) {
+                QueuePlayer temp = players[j];
+                players[j] = players[j + 1];
+                players[j + 1] = temp;
+            }
+        }
+    }
+}
+
+void Menu::setupGameRoom() {
+    currentMenuType = GAME_ROOM;
+    itemCount = 4;
+    selectedIndex = 0;
+    clearMenuItems();
+
+    populateGameRoomWithUsers();
+
+    setItem(0, "Select Opponent", 150, 50, NONE);
+    setItem(1, "Start Game", 150, 350, START_GAME_WITH_SELECTED);
+    setItem(2, "Refresh Players", 150, 400, REFRESH_PLAYERS);
+    setItem(3, "Back", 150, 450, BACK_MAIN);
+
+    finalizeBounds(1);
+    inGameRoom = true;
+}
+
+void Menu::renderGameRoom() {
+    Text title("Game Room", font, fontSize);
+    title.setPosition(80, 30);
+    title.setFillColor(fontColor);
+    window->draw(title);
+
+    // Display current player info with score
+    string currentUsername = string(currentPlayer.username);
+    int currentPlayerScore = 1000;
+    LeaderboardEntry sorted[LEADERBOARD_SIZE];
+    leaderboard.getSortedEntries(sorted);
+    for (int i = 0; i < leaderboard.getSize(); i++) {
+        if (sorted[i].username == currentUsername) {
+            currentPlayerScore = sorted[i].score;
+            break;
+        }
+    }
+
+    Text currentPlayerText("You: " + currentUsername + " (Score: " + to_string(currentPlayerScore) + ")", font, 25);
+    currentPlayerText.setPosition(100, 70);
+    currentPlayerText.setFillColor(Color::Green);
+    window->draw(currentPlayerText);
+
+    // Display matchmaking tolerance
+    Text toleranceText("Matchmaking Tolerance: ±" + to_string(matchmakingTolerance) + " points", font, 20);
+    toleranceText.setPosition(100, 100);
+    toleranceText.setFillColor(Color::Yellow);
+    window->draw(toleranceText);
+
+    // Display available players with scores
+    Text availableTitle("Available Players (sorted by skill proximity):", font, 22);
+    availableTitle.setPosition(100, 130);
+    availableTitle.setFillColor(getCurrentTheme().titleColor);
+    window->draw(availableTitle);
+
+    if (availablePlayers.getSize() == 0) {
+        Text noPlayers("No suitable players found within tolerance", font, 18);
+        noPlayers.setPosition(120, 160);
+        noPlayers.setFillColor(Color::Red);
+        window->draw(noPlayers);
+
+        Text expandHint("Try increasing tolerance or refreshing", font, 16);
+        expandHint.setPosition(120, 190);
+        expandHint.setFillColor(Color::Yellow);
+        window->draw(expandHint);
+    }
+    else {
+        for (int i = 0; i < availablePlayers.getSize() && i < 8; i++) {
+            Text playerText;
+            playerText.setFont(font);
+
+            // Calculate score difference
+            int scoreDiff = availablePlayers[i].score - currentPlayerScore;
+            string diffStr = (scoreDiff >= 0) ? "+" + to_string(scoreDiff) : to_string(scoreDiff);
+
+            playerText.setString(to_string(i + 1) + ". " + availablePlayers[i].username +
+                " (Score: " + to_string(availablePlayers[i].score) +
+                ", Diff: " + diffStr + ")");
+            playerText.setCharacterSize(18);
+            playerText.setPosition(120, 160 + i * 25);
+
+            // Color coding based on score difference
+            if (abs(scoreDiff) <= 100) {
+                playerText.setFillColor(Color::Green); // Very close match
+            }
+            else if (abs(scoreDiff) <= 300) {
+                playerText.setFillColor(Color::Yellow); // Good match
+            }
+            else {
+                playerText.setFillColor(Color(255, 165, 0)); // Orange - fair match
+            }
+
+            if (i == selectedPlayerIndex) {
+                playerText.setFillColor(getCurrentTheme().highlightColor);
+                string selectedText = "> " + playerText.getString();
+                playerText.setString(selectedText);
+            }
+
+            window->draw(playerText);
+        }
+
+        // Show selected player info with match quality
+        if (availablePlayers.getSize() > 0) {
+            int selectedScoreDiff = availablePlayers[selectedPlayerIndex].score - currentPlayerScore;
+            string matchQuality;
+            Color qualityColor;
+
+            if (abs(selectedScoreDiff) <= 100) {
+                matchQuality = "Excellent Match!";
+                qualityColor = Color::Green;
+            }
+            else if (abs(selectedScoreDiff) <= 300) {
+                matchQuality = "Good Match";
+                qualityColor = Color::Yellow;
+            }
+            else if (abs(selectedScoreDiff) <= matchmakingTolerance) {
+                matchQuality = "Fair Match";
+                qualityColor = Color(255, 165, 0);
+            }
+            else {
+                matchQuality = "Skill Gap";
+                qualityColor = Color::Red;
+            }
+
+            Text selectedInfo("Selected: " + availablePlayers[selectedPlayerIndex].username +
+                " | " + matchQuality, font, 20);
+            selectedInfo.setPosition(100, 380);
+            selectedInfo.setFillColor(qualityColor);
+            window->draw(selectedInfo);
+        }
+    }
+
+    // Draw menu items
+    for (int i = 1; i < itemCount; i++) {
+        window->draw(menuItems[i].text);
+    }
 }
 
 void Menu::renderMatchmakingMenu() {
@@ -1444,7 +1850,7 @@ void Menu::renderMatchmakingMenu() {
 void Menu::render() {
     window->clear(bgColor);
 
-        // Render inventory if active
+    // Render inventory if active
     if (showInventory) {
         themeInventory->render(window);
         window->display();
@@ -1477,6 +1883,9 @@ void Menu::render() {
     }
     else if (currentMenuType == PROFILE_VIEW) {
         renderProfileView();
+    }
+    else if (currentMenuType == GAME_ROOM) {
+        renderGameRoom();
     }
     else {
         renderNormalMenu();

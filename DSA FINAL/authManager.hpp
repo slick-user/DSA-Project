@@ -82,6 +82,9 @@ public:
     bool isLoggedIn() const { return loggedIn; }
     void logout();
     
+    int getUserCount() const;
+    Player getUserAtIndex(int index) const;
+
     void updatePlayerStats();
 
     // File operations

@@ -125,6 +125,16 @@ private:
         return newNode;
     }
 
+    AVLNode* search(AVLNode* node, int themeId) {
+        if (node == nullptr || node->theme.id == themeId)
+            return node;
+
+        if (themeId < node->theme.id)
+            return search(node->left, themeId);
+        else
+            return search(node->right, themeId);
+    }
+
 public:
 
     // CONSTRUCTORS
@@ -168,6 +178,31 @@ public:
         return result;
     }
     
+    Theme* search(int themeId) {
+        AVLNode* result = search(root, themeId);
+        if (result != nullptr) {
+            return &(result->theme);
+        }
+        return nullptr;
+    }
+
+    // Optional: Also add a method to get index by ID
+    int getIndexById(int themeId) {
+        Theme* allThemes = new Theme[themeCount];
+        int count = 0;
+        getAllThemes(allThemes, count);
+
+        for (int i = 0; i < count; i++) {
+            if (allThemes[i].id == themeId) {
+                delete[] allThemes;
+                return i;
+            }
+        }
+
+        delete[] allThemes;
+        return -1;
+    }
+
     int getSize() const {
         return themeCount;
     }

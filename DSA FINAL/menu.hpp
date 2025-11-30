@@ -35,6 +35,13 @@ enum UI {
     REMOVE_FRIEND,
     MATCHMAKING_MENU,
     FIND_MATCH,
+    GAME_ROOM,
+    REFRESH_PLAYERS,
+    QUICK_PLAY,
+    AUTO_MATCH,
+    START_GAME_WITH_SELECTED,
+    GAME_ROOM_UI,
+    CHANGE_TOLERANCE,
     END,
     QUIT,
     AUTH_SCREEN,
@@ -133,6 +140,19 @@ private:
     Clock searchTimer;
     string searchStatus;
     
+    // Game Room 
+    void setupGameRoom();
+    void renderGameRoom();
+    void populateGameRoomWithUsers();
+
+    // Game room related variables
+    int getCurrentPlayerScore();
+    void sortPlayersByProximity(Vector<QueuePlayer>& players, int targetScore);
+    Vector<QueuePlayer> availablePlayers;
+    int selectedPlayerIndex;
+    bool inGameRoom;
+    int matchmakingTolerance;
+
     // Level and mode selection
     GameLevel selectedLevel;
     GameMode selectedMode;

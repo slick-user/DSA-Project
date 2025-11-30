@@ -298,3 +298,13 @@ void AuthManager::updatePlayerStats() {
     saveUsers();
 }
 
+int AuthManager::getUserCount() const {
+    return userCount;
+}
+
+Player AuthManager::getUserAtIndex(int index) const {
+    if (index >= 0 && index < userCount) {
+        return users[index];
+    }
+    return Player();
+}

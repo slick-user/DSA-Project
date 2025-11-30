@@ -2,24 +2,25 @@
 
 MatchmakingQueue::MatchmakingQueue() : nextRoomID(1) {}
 
-void MatchmakingQueue::addPlayer(const string& username, int score, int rank) {
-    heap.push_back(QueuePlayer(username, score, rank));
+void MatchmakingQueue::addPlayer(const string& username, int score, int rank, int playerID) {
+    heap.push_back(QueuePlayer(username, score, rank, playerID));
     heapifyUp(heap.getSize() - 1);
 }
 
-void MatchmakingQueue::addPlayerFromLeaderboard(const string& username, Leaderboard& lb) {
+
+void MatchmakingQueue::addPlayerFromLeaderboard(const string& username, Leaderboard& lb, int playerID) {
     // Get player's score from leaderboard
     LeaderboardEntry sorted[LEADERBOARD_SIZE];
     lb.getSortedEntries(sorted);
 
     for (int i = 0; i < lb.getSize(); i++) {
         if (sorted[i].username == username) {
-            addPlayer(username, sorted[i].score, i + 1); // rank is position + 1
+            addPlayer(username, sorted[i].score, i + 1, playerID);
             return;
         }
     }
     // If not found in leaderboard, add with default score
-    addPlayer(username, 0, 999);
+    addPlayer(username, 0, 999, playerID);
 }
 
 QueuePlayer MatchmakingQueue::extractMax() {

@@ -38,6 +38,17 @@ private:
     Text statusText;
     Font font;
 
+    // Search functionality
+    bool isSearching;
+    string searchQuery;
+    Text searchText;
+    RectangleShape searchBox;
+
+    void setupVisuals();
+    void updatePositions();
+    int findThemeIndexById(int themeId);
+    void handleSearchInput(Event& event);
+
 public:
     Inventory(float x = 20, float y = 110, float width = 320, float height = 320);
     ~Inventory();
@@ -57,8 +68,7 @@ public:
     void render(RenderWindow* window);
     void handleInput(Event& event);
 
-private:
-    void setupVisuals();
-    void updatePositions(); // New method to update all positions
-    int findThemeIndexById(int themeId);
+    // Search functionality
+    void startSearch();
+    void performSearch();
 };
