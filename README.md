@@ -22,16 +22,16 @@ Use this to coordinate development and ensure all modules stay consistent across
 - [x] Profile Section Access
 
 ## End Menu
-- [~] End the game cleanly (resource cleanup, save score)
+- [x] End the game cleanly (resource cleanup, save score)
 - [x] Display final score
 - [x] Highlight new high score
 - [x] Options: Restart, Main Menu, Exit Game
 
 ## Additional Menu Features
 - [ ] Settings Menu (Sound, Controls, Themes)
-- [~] Theme Selector (connected to AVL Theme Inventory)
-- [?] Tutorial / How to Play
-- [?] Credits Page
+- [x] Theme Selector (connected to AVL Theme Inventory)
+- [ ] Tutorial / How to Play
+- [ ] Credits Page
 
 ---
 
@@ -82,13 +82,11 @@ Each profile includes:
 - [x] Friends List
 - [x] Match History (Win/Loss)
 - [x] Total Points
-- [ ] Saved Theme Preference
-- [ ] Saved Games List (via Save System)
 
 Operations:
 - [x] View profile
 - [x] Update profile data
-- [ ] Sync with Leaderboard and Matchmaking Queue
+- [x] Sync with Leaderboard and Matchmaking Queue
 
 ---
 
@@ -134,20 +132,20 @@ Operations:
 
 # **7. Matchmaking Queue (Priority Queue)**
 
-- [ ] Use priority queue based on player total score
-- [ ] Higher score = higher priority
-- [ ] Always match top two players
-- [ ] After matches, update scores & re-insert players as necessary
-- [ ] Automatically form game rooms from queue
+- [x] Use priority queue based on player total score
+- [x] Higher score = higher priority
+- [x] Always match top two players
+- [x] After matches, update scores & re-insert players as necessary
+- [x] Automatically form game rooms from queue
 
 ---
 
 # **8. Game Room System**
 
-- [ ] Use queue structure to store players waiting for a match
-- [ ] Pair players automatically as soon as 2 are available
-- [ ] Connect with multiplayer game session
-- [ ] Sync with Matchmaking Priority Queue
+- [x] Use queue structure to store players waiting for a match
+- [x] Pair players automatically as soon as 2 are available
+- [x] Connect with multiplayer game session
+- [x] Sync with Matchmaking Priority Queue
 
 ---
 
@@ -161,10 +159,10 @@ Operations:
 
 ## Hash Table
 - [x] Map username → index in array list
-- [ ] Fast lookup for:
-  - [ ] Sending friend requests
-  - [ ] Accepting requests
-  - [ ] Searching players
+- [x] Fast lookup for:
+  - [x] Sending friend requests
+  - [x] Accepting requests
+  - [x] Searching players
 
 ## Friend Request Operations
 - [x] Send friend request
@@ -211,9 +209,8 @@ Operations:
 
 ## Theme Selection
 - [x] Implement Themes
-- [ ] Browse themes in sorted order
-- [ ] Search & apply theme by ID
-- [ ] Save selected theme to player profile
+- [x] Browse themes in sorted order
+- [x] Search & apply theme by ID
 
 ---
 
@@ -221,6 +218,4 @@ Operations:
 - [x] Full UI pass (consistent, clean)
 - [x] File-handling error checking everywhere
 - [?] Add sound effects toggle
-- [~] Adjustable difficulty levels
-- [ ] Logs for debugging crashes or unexpected behavior
-
+- [x] Adjustable difficulty levels
