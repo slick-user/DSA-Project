@@ -1,16 +1,4 @@
-# 🎮 Project Feature Roadmap & To-Do List
-
-This document tracks all planned, in-progress, and completed features for the game project.  
-Use this to coordinate development and ensure all modules stay consistent across the system.
-
----
-
-## ✅ Legend
-- [ ] To Do  
-- [~] In Progress  
-- [x] Completed  
-
----
+# 🎮 Project Features
 
 # **1. Main Menu System**
 
